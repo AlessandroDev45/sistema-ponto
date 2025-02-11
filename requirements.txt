@@ -1,0 +1,12 @@
+selenium
+python-dotenv
+python-telegram-bot
+schedule
+holidays
+requests
+reportlab
+pandas
+matplotlib
+seaborn
+fpdf
+xlsxwriter
