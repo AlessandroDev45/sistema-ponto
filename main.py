@@ -10,11 +10,18 @@ import signal
 import os
 from dotenv import load_dotenv
 
-from database.schema import Database
-from calculos.trabalhista import CalculosTrabalhistas, ProcessadorFolha
-from relatorios.gerador_relatorios import GeradorRelatorios
-from automacao.ponto_controller import AutomacaoPonto
-from telegram_controller import TelegramController
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+# Imports do sistema
+from src.calculos.processor import ProcessadorDados
+from src.calculos.trabalhista import CalculosTrabalhistas, ProcessadorFolha
+from src.relatorios.gerador_relatorios import GeradorRelatorios
+from src.automacao.ponto_controller import AutomacaoPonto
+from src.utils.database import Database
+from src.utils.telegram_controller import TelegramController
+from src.utils.web_controller import WebController
 from config.config import Config
 
 class SistemaPonto:
