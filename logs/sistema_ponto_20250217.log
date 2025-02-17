@@ -1,0 +1,33 @@
+2025-02-17 00:17:26,429 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:17:26,439 - SistemaPonto - CRITICAL - Erro fatal na inicialização: type object 'Config' has no attribute 'SALARIO_BASE'
+2025-02-17 00:18:36,231 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:18:36,232 - SistemaPonto - CRITICAL - Erro fatal na inicialização: Erro ao carregar configurações: Arquivo .env não encontrado
+2025-02-17 00:21:28,378 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:21:28,381 - SistemaPonto - CRITICAL - Erro fatal na inicialização: 'TelegramController' object has no attribute 'mostrar_ajuda'
+2025-02-17 00:22:25,522 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:22:25,524 - SistemaPonto - CRITICAL - Erro fatal na inicialização: 'TelegramController' object has no attribute 'mostrar_configuracoes'
+2025-02-17 00:25:21,933 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:25:27,515 - SistemaPonto - CRITICAL - Erro fatal na execução: type object 'Config' has no attribute 'HORARIO_ENTRADA'
+2025-02-17 00:25:32,039 - SistemaPonto - INFO - Sistema encerrado com sucesso
+2025-02-17 00:34:59,023 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:35:06,572 - SistemaPonto - CRITICAL - Erro fatal na execução: type object 'Config' has no attribute 'HORARIO_ENTRADA'
+2025-02-17 00:35:11,445 - SistemaPonto - INFO - Sistema encerrado com sucesso
+2025-02-17 00:40:23,674 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:40:25,846 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:45:47,296 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:45:49,816 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:46:43,512 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:46:45,604 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:50:53,697 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:50:56,180 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:53:58,130 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:54:00,341 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:54:28,510 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:54:30,521 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:57:06,648 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:57:08,681 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 00:59:34,896 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-17 00:59:37,716 - SistemaPonto - INFO - Sistema iniciado
+2025-02-17 00:59:37,716 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-17 01:08:42,084 - SistemaPonto - INFO - Recebido sinal de encerramento
+2025-02-17 01:08:50,165 - SistemaPonto - INFO - Recebido sinal de encerramento

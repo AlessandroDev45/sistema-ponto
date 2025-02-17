@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime, timedelta
+from config import Config
 import time
 import logging
 import os
@@ -171,7 +172,7 @@ class AutomacaoPonto:
 
     def verificar_horario(self):
         try:
-            from config.config import Config
+            config = Config()  # Obter instância do Config
             hora_atual = datetime.now().strftime('%H:%M')
             
             if hora_atual not in [Config.HORARIO_ENTRADA, Config.HORARIO_SAIDA]:

@@ -9,6 +9,12 @@ import sys
 import signal
 import os
 from dotenv import load_dotenv
+load_dotenv(encoding='latin1')
+
+
+import src
+from src.telegram_controller import TelegramController
+from src.utils.database import Database
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -20,8 +26,6 @@ from src.calculos.trabalhista import CalculosTrabalhistas, ProcessadorFolha
 from src.relatorios.gerador_relatorios import GeradorRelatorios
 from src.automacao.ponto_controller import AutomacaoPonto
 from src.utils.database import Database
-from src.utils.telegram_controller import TelegramController
-from src.utils.web_controller import WebController
 from config.config import Config
 
 class SistemaPonto:
@@ -30,22 +34,24 @@ class SistemaPonto:
         self.logger.info("Iniciando Sistema de Ponto")
         
         try:
+            self.config = Config()  # Instância única do Config
+            
             self.db = Database()
-            self.calculadora = CalculosTrabalhistas(Config.SALARIO_BASE)
+            self.calculadora = CalculosTrabalhistas(self.config.SALARIO_BASE)
             self.processador_folha = ProcessadorFolha(self.db, self.calculadora)
             self.gerador_relatorios = GeradorRelatorios(self.db, self.calculadora)
             
             self.telegram = TelegramController(
-                Config.TELEGRAM_TOKEN,
-                Config.TELEGRAM_CHAT_ID,
+                self.config.TELEGRAM_TOKEN,
+                self.config.TELEGRAM_CHAT_ID,
                 self.db,
                 self.gerador_relatorios
             )
             
             self.automacao = AutomacaoPonto(
-                Config.URL_SISTEMA,
-                Config.LOGIN,
-                Config.SENHA,
+                self.config.URL_SISTEMA,
+                self.config.LOGIN,
+                self.config.SENHA,
                 self.db,
                 self.telegram
             )
@@ -173,15 +179,22 @@ class SistemaPonto:
 
     def executar(self):
         try:
+           
             self.telegram.enviar_mensagem("🟢 Sistema iniciado")
+            self.telegram.mostrar_menu()
+            signal.signal(signal.SIGINT, self.handle_shutdown)
+            signal.signal(signal.SIGTERM, self.handle_shutdown)
+            self.sistema_ativo = True
+            self.logger.info("Sistema iniciado")
+            
             
             # Agendamentos
-            schedule.every().day.at(Config.HORARIO_ENTRADA).do(
-                self.registrar_ponto_automatico
-            )
-            schedule.every().day.at(Config.HORARIO_SAIDA).do(
-                self.registrar_ponto_automatico
-            )
+            schedule.every().day.at(self.config.HORARIO_ENTRADA).do(
+            self.registrar_ponto_automatico
+        )
+            schedule.every().day.at(self.config.HORARIO_SAIDA).do(
+            self.registrar_ponto_automatico
+        )
             schedule.every(30).seconds.do(self.processar_comandos_telegram)
             schedule.every(5).minutes.do(self.verificar_sistema)
             schedule.every().day.at("23:50").do(self.processar_folha_mensal)
