@@ -90,14 +90,15 @@ class Database:
 
     def registrar_ponto(self, data_hora, tipo, status, motivo=None):
         try:
+            data_formatada = data_hora.strftime('%Y-%m-%d %H:%M:%S')
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO registros (data_hora, tipo, status, motivo)
                     VALUES (?, ?, ?, ?)
-                ''', (data_hora, tipo, status, motivo))
+                ''', (data_formatada, tipo, status, motivo))
                 conn.commit()
-                self.logger.info(f"Registro de ponto salvo: {data_hora} - {tipo} - {status}")
+                self.logger.info(f"Registro de ponto salvo: {data_formatada} - {tipo} - {status}")
                 return True
         except Exception as e:
             self.logger.error(f"Erro ao registrar ponto: {e}")
@@ -179,7 +180,10 @@ class Database:
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT * FROM registros
+                    SELECT id, 
+                        strftime('%Y-%m-%d %H:%M:%S', data_hora) as data_hora,
+                        tipo, status, motivo, created_at
+                    FROM registros
                     WHERE data_hora BETWEEN ? AND ?
                     ORDER BY data_hora
                 ''', (data_inicio, data_fim))

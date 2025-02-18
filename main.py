@@ -46,7 +46,9 @@ class SistemaPonto:
                 self.config.TELEGRAM_CHAT_ID,
                 self.db,
                 self.gerador_relatorios
+                 
             )
+            self.telegram.mostrar_menu()
             
             self.automacao = AutomacaoPonto(
                 self.config.URL_SISTEMA,
@@ -123,8 +125,12 @@ class SistemaPonto:
         try:
             updates = self.telegram.get_updates()
             for update in updates:
-                if "message" in update:
-                    self.telegram.processar_mensagem(update["message"])
+                try:
+                    if "message" in update:
+                        self.telegram.processar_mensagem(update["message"])
+                except Exception as e:
+                    self.logger.error(f"Erro ao processar mensagem individual: {e}")
+                    continue
         except Exception as e:
             self.logger.error(f"Erro ao processar comandos Telegram: {e}")
 
@@ -179,7 +185,6 @@ class SistemaPonto:
 
     def executar(self):
         try:
-           
             self.telegram.enviar_mensagem("🟢 Sistema iniciado")
             self.telegram.mostrar_menu()
             signal.signal(signal.SIGINT, self.handle_shutdown)
@@ -187,29 +192,33 @@ class SistemaPonto:
             self.sistema_ativo = True
             self.logger.info("Sistema iniciado")
             
-            
             # Agendamentos
             schedule.every().day.at(self.config.HORARIO_ENTRADA).do(
-            self.registrar_ponto_automatico
-        )
+                self.registrar_ponto_automatico
+            )
             schedule.every().day.at(self.config.HORARIO_SAIDA).do(
-            self.registrar_ponto_automatico
-        )
-            schedule.every(30).seconds.do(self.processar_comandos_telegram)
+                self.registrar_ponto_automatico
+            )
+            schedule.every(5).seconds.do(self.processar_comandos_telegram)
             schedule.every(5).minutes.do(self.verificar_sistema)
             schedule.every().day.at("23:50").do(self.processar_folha_mensal)
             
             self.logger.info("Sistema iniciado e aguardando")
             
-            while self.sistema_ativo:
+            while True:  # Alterar para loop infinito
+                if not self.telegram.sistema_ativo:  # Verificar status do telegram
+                    self.logger.info("Sistema pausado")
+                    time.sleep(5)  # Esperar 5 segundos antes de verificar novamente
+                    continue
+                    
                 schedule.run_pending()
                 time.sleep(1)
-                
+                    
         except Exception as e:
             self.logger.critical(f"Erro fatal na execução: {e}")
             self.telegram.enviar_mensagem(f"🔴 Erro crítico: {e}")
             self.encerrar_sistema()
-            sys.exit(1)
+        sys.exit(1)
 
 if __name__ == "__main__":
     load_dotenv()

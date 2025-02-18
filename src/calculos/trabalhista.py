@@ -103,6 +103,8 @@ class ProcessadorFolha:
             horas_trabalhadas = self.db.obter_horas_trabalhadas_periodo(inicio_periodo, fim_periodo)
             
             totais = {
+                'mes': mes,
+                'ano': ano,
                 'horas_normais': 0,
                 'horas_extras': {
                     '60': 0, '65': 0, '75': 0,
@@ -132,36 +134,47 @@ class ProcessadorFolha:
         totais['horas_noturnas'] += registro[10]  # índice das horas noturnas
 
     def calcular_valores(self, totais):
-        valores = {
-            'salario_base': self.calculadora.salario_base,
-            'periculosidade': self.calculadora.calcular_periculosidade(),
-            'horas_normais': self.calculadora.calcular_valor_hora(totais['horas_normais']),
-            'horas_extras': sum(
-                self.calculadora.calcular_valor_hora(horas, f'he_{tipo}')
-                for tipo, horas in totais['horas_extras'].items()
-            ),
-            'adicional_noturno': self.calculadora.calcular_valor_hora(
-                totais['horas_noturnas'], 'noturno'
+        try:
+            mes = totais.get('mes') 
+            ano = totais.get('ano')
+            
+            valores = {
+                'mes': mes,
+                'ano': ano,
+                'salario_base': self.calculadora.salario_base,
+                'periculosidade': self.calculadora.calcular_periculosidade(),
+                'horas_normais': self.calculadora.calcular_valor_hora(totais['horas_normais']),
+                'horas_extras': sum(
+                    self.calculadora.calcular_valor_hora(horas, f'he_{tipo}')
+                    for tipo, horas in totais['horas_extras'].items()
+                ),
+                'adicional_noturno': self.calculadora.calcular_valor_hora(
+                    totais['horas_noturnas'], 'noturno'
+                )
+            }
+
+            valores['subtotal'] = sum(valores.values())
+            valores['dsr'] = self.calculadora.calcular_dsr(
+                valores['subtotal'] - valores['salario_base'],
+                totais['dias_uteis'],
+                totais['domingos_feriados']
             )
-        }
+            
+            valores['total_proventos'] = valores['subtotal'] + valores['dsr']
+            valores['inss'] = self.calculadora.calcular_inss(valores['total_proventos'])
+            valores['irrf'] = self.calculadora.calcular_irrf(
+                valores['total_proventos'] - valores['inss']
+            )
+            valores['fgts'] = self.calculadora.calcular_fgts(valores['total_proventos'])
+            valores['total_descontos'] = valores['inss'] + valores['irrf']
+            valores['liquido'] = valores['total_proventos'] - valores['total_descontos']
+            valores['base_fgts'] = valores['total_proventos']
 
-        valores['subtotal'] = sum(valores.values())
-        valores['dsr'] = self.calculadora.calcular_dsr(
-            valores['subtotal'] - valores['salario_base'],
-            totais['dias_uteis'],
-            totais['domingos_feriados']
-        )
-        
-        valores['total_proventos'] = valores['subtotal'] + valores['dsr']
-        valores['inss'] = self.calculadora.calcular_inss(valores['total_proventos'])
-        valores['irrf'] = self.calculadora.calcular_irrf(
-            valores['total_proventos'] - valores['inss']
-        )
-        valores['fgts'] = self.calculadora.calcular_fgts(valores['total_proventos'])
-        valores['total_descontos'] = valores['inss'] + valores['irrf']
-        valores['liquido'] = valores['total_proventos'] - valores['total_descontos']
-
-        return valores
+            return valores
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao calcular valores: {str(e)}")
+            raise
 
     def contar_dias_uteis(self, inicio, fim):
         dias = 0

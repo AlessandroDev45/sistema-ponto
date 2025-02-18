@@ -172,16 +172,16 @@ class AutomacaoPonto:
 
     def verificar_horario(self):
         try:
-            config = Config()  # Obter instância do Config
+            config = Config.get_instance()
             hora_atual = datetime.now().strftime('%H:%M')
             
-            if hora_atual not in [Config.HORARIO_ENTRADA, Config.HORARIO_SAIDA]:
+            if hora_atual not in [config.HORARIO_ENTRADA, config.HORARIO_SAIDA]:
                 self.logger.info(f"Fora do horário de registro: {hora_atual}")
                 return False
 
             if self.ultimo_registro:
                 minutos_desde_ultimo = (datetime.now() - self.ultimo_registro).total_seconds() / 60
-                if minutos_desde_ultimo < Config.INTERVALO_MINIMO:
+                if minutos_desde_ultimo < config.INTERVALO_MINIMO:
                     self._notificar_erro(
                         "verificação",
                         f"Intervalo mínimo não respeitado: {minutos_desde_ultimo:.0f} minutos"
