@@ -8,43 +8,52 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import csv
 import json
+from config.config import Config
 
 class GeradorRelatorios:
-   def __init__(self, database, calculadora):
-       self.db = database
-       self.calculadora = calculadora
-       self.logger = logging.getLogger('GeradorRelatorios')
-       self.styles = getSampleStyleSheet()
+    def __init__(self, database, calculadora):
+        self.db = database
+        self.calculadora = calculadora
+        self.config = Config.get_instance()  # Adicionado
+        self.logger = logging.getLogger('GeradorRelatorios')
+        self.styles = getSampleStyleSheet()
 
-   def gerar_relatorio_mensal(self, mes, ano, formato='pdf'):
-       try:
-           inicio = datetime(ano, mes, 21)
-           if mes == 12:
-               fim = datetime(ano + 1, 1, 20)
-           else:
-               fim = datetime(ano, mes + 1, 20)
+    def gerar_relatorio_mensal(self, mes, ano, formato='pdf'):
+        try:
+            # Use self.config para caminhos, se necessário
+            output_dir = self.config.RELATORIOS_DIR if hasattr(self.config, 'RELATORIOS_DIR') else 'relatorios'
+            os.makedirs(output_dir, exist_ok=True)
 
-           dados = {
-               'registros': self.db.obter_registros_periodo(inicio, fim),
-               'horas': self.db.obter_horas_trabalhadas_periodo(inicio, fim),
-               'falhas': self.db.obter_falhas_periodo(inicio, fim),
-               'calculos': self.db.obter_calculo_mensal(mes, ano)
-           }
+            inicio = datetime(ano, mes, 21)
+            if mes == 12:
+                fim = datetime(ano + 1, 1, 20)
+            else:
+                fim = datetime(ano, mes + 1, 20)
 
-           if formato == 'pdf':
-               return self.gerar_pdf_mensal(dados, mes, ano)
-           elif formato == 'csv':
-               return self.gerar_csv_mensal(dados, mes, ano)
-           elif formato == 'json':
-               return self.gerar_json_mensal(dados, mes, ano)
-           else:
-               raise ValueError(f"Formato inválido: {formato}")
+            dados = {
+                'registros': self.db.obter_registros_periodo(inicio, fim),
+                'horas': self.db.obter_horas_trabalhadas_periodo(inicio, fim),
+                'falhas': self.db.obter_falhas_periodo(inicio, fim),
+                'calculos': self.db.obter_calculo_mensal(mes, ano)
+            }
 
-       except Exception as e:
-           self.logger.error(f"Erro ao gerar relatório mensal: {e}")
-           return None
+            if formato == 'pdf':
+                filename = os.path.join(output_dir, f"relatorio_mensal_{mes}_{ano}.pdf")
+                return self.gerar_pdf_mensal(dados, mes, ano, filename)
+            elif formato == 'csv':
+                filename = os.path.join(output_dir, f"relatorio_mensal_{mes}_{ano}.csv")
+                return self.gerar_csv_mensal(dados, mes, ano, filename)
+            elif formato == 'json':
+                filename = os.path.join(output_dir, f"relatorio_mensal_{mes}_{ano}.json")
+                return self.gerar_json_mensal(dados, mes, ano, filename)
+            else:
+                raise ValueError(f"Formato inválido: {formato}")
 
-   def gerar_pdf_mensal(self, dados, mes, ano):
+        except Exception as e:
+            self.logger.error(f"Erro ao gerar relatório mensal: {e}")
+            return None
+
+    def gerar_pdf_mensal(self, dados, mes, ano):
        try:
            filename = f"relatorio_mensal_{mes}_{ano}.pdf"
            doc = SimpleDocTemplate(
@@ -100,7 +109,7 @@ class GeradorRelatorios:
            self.logger.error(f"Erro ao gerar PDF: {e}")
            return None
 
-   def criar_tabela_registros(self, registros):
+    def criar_tabela_registros(self, registros):
        data = [['Data', 'Hora', 'Tipo', 'Status', 'Motivo']]
        for reg in registros:
            dt = datetime.strptime(reg[1], '%Y-%m-%d %H:%M:%S')
@@ -114,7 +123,7 @@ class GeradorRelatorios:
        
        return self.formatar_tabela(data)
 
-   def criar_tabela_horas(self, horas):
+    def criar_tabela_horas(self, horas):
        data = [[
            'Data', 'Normais', 'HE 60%', 'HE 65%', 
            'HE 75%', 'HE 100%', 'HE 150%', 'Noturnas'
@@ -134,7 +143,7 @@ class GeradorRelatorios:
        
        return self.formatar_tabela(data)
 
-   def criar_tabela_financeiro(self, calculos):
+    def criar_tabela_financeiro(self, calculos):
        if not calculos:
            return Table([['Dados financeiros não disponíveis']])
            
@@ -157,7 +166,7 @@ class GeradorRelatorios:
        
        return self.formatar_tabela(data)
 
-   def criar_tabela_falhas(self, falhas):
+    def criar_tabela_falhas(self, falhas):
        data = [['Data/Hora', 'Tipo', 'Erro', 'Detalhes']]
        for f in falhas:
            dt = datetime.strptime(f[1], '%Y-%m-%d %H:%M:%S')
@@ -170,7 +179,7 @@ class GeradorRelatorios:
        
        return self.formatar_tabela(data)
 
-   def formatar_tabela(self, data):
+    def formatar_tabela(self, data):
        table = Table(data)
        table.setStyle(TableStyle([
            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -190,7 +199,7 @@ class GeradorRelatorios:
        ]))
        return table
 
-   def gerar_csv_mensal(self, dados, mes, ano):
+    def gerar_csv_mensal(self, dados, mes, ano):
        try:
            filename = f"relatorio_mensal_{mes}_{ano}.csv"
            with open(filename, 'w', newline='') as csvfile:
@@ -231,7 +240,7 @@ class GeradorRelatorios:
            self.logger.error(f"Erro ao gerar CSV: {e}")
            return None
 
-   def gerar_json_mensal(self, dados, mes, ano):
+    def gerar_json_mensal(self, dados, mes, ano):
        try:
            filename = f"relatorio_mensal_{mes}_{ano}.json"
            

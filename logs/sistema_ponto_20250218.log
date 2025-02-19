@@ -279,3 +279,18 @@
 2025-02-18 08:33:31,747 - SistemaPonto - INFO - Iniciando Sistema de Ponto
 2025-02-18 08:33:36,168 - SistemaPonto - INFO - Sistema iniciado
 2025-02-18 08:33:36,169 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-18 20:26:35,236 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 20:26:40,947 - SistemaPonto - INFO - Sistema iniciado
+2025-02-18 20:26:40,947 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-18 20:27:24,486 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 20:27:28,703 - SistemaPonto - INFO - Sistema iniciado
+2025-02-18 20:27:28,703 - SistemaPonto - INFO - Sistema iniciado e aguardando
+2025-02-18 20:42:25,017 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 20:42:25,020 - SistemaPonto - CRITICAL - Erro fatal na inicialização: name 'sys' is not defined
+2025-02-18 20:43:16,459 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 20:43:16,461 - SistemaPonto - CRITICAL - Erro fatal na inicialização: name 'sys' is not defined
+2025-02-18 20:46:18,681 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 20:46:18,683 - SistemaPonto - CRITICAL - Erro fatal na inicialização: name 'sys' is not defined
+2025-02-18 20:50:07,523 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 20:50:10,875 - SistemaPonto - INFO - Sistema iniciado
+2025-02-18 20:50:10,875 - SistemaPonto - INFO - Sistema iniciado e aguardando

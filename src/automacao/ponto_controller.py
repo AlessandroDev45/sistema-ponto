@@ -1,4 +1,4 @@
-# automacao/ponto_controller.py
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime, timedelta
-from config import Config
+from config.config import Config  # Import corretamente para usar get_instance
 import time
 import logging
 import os
@@ -23,6 +23,7 @@ class AutomacaoPonto:
         self.sistema_ativo = True
         self.ultimo_registro = None
         self.logger = logging.getLogger('AutomacaoPonto')
+        self.config = Config.get_instance()  # Inicializa a instância Singleton aqui
         self._configurar_driver()
 
     def _configurar_driver(self):
@@ -172,19 +173,42 @@ class AutomacaoPonto:
 
     def verificar_horario(self):
         try:
-            config = Config.get_instance()
-            hora_atual = datetime.now().strftime('%H:%M')
+            hora_atual = datetime.now()
             
-            if hora_atual not in [config.HORARIO_ENTRADA, config.HORARIO_SAIDA]:
-                self.logger.info(f"Fora do horário de registro: {hora_atual}")
+            # Usa a instância do Config armazenada em self.config
+            entrada = datetime.strptime(self.config.HORARIO_ENTRADA, '%H:%M').time()
+            saida = datetime.strptime(self.config.HORARIO_SAIDA, '%H:%M').time()
+            
+            # Adiciona tolerância
+            tolerancia = timedelta(minutes=self.config.TOLERANCIA_MINUTOS)
+            
+            # Verifica se está dentro do horário com tolerância
+            hora_atual_time = hora_atual.time()
+            if not (
+                abs(hora_atual_time.hour - entrada.hour) * 60 + 
+                abs(hora_atual_time.minute - entrada.minute) <= self.config.TOLERANCIA_MINUTOS
+                or
+                abs(hora_atual_time.hour - saida.hour) * 60 + 
+                abs(hora_atual_time.minute - saida.minute) <= self.config.TOLERANCIA_MINUTOS
+            ):
+                self.logger.info(f"Fora do horário de registro: {hora_atual.strftime('%H:%M')}")
+                self._notificar_erro(
+                    "horário",
+                    f"Horário não permitido para registro.\n"
+                    f"Horários permitidos:\n"
+                    f"Entrada: {self.config.HORARIO_ENTRADA} (±{self.config.TOLERANCIA_MINUTOS}min)\n"
+                    f"Saída: {self.config.HORARIO_SAIDA} (±{self.config.TOLERANCIA_MINUTOS}min)"
+                )
                 return False
 
+            # Verifica intervalo mínimo
             if self.ultimo_registro:
-                minutos_desde_ultimo = (datetime.now() - self.ultimo_registro).total_seconds() / 60
-                if minutos_desde_ultimo < config.INTERVALO_MINIMO:
+                minutos_desde_ultimo = (hora_atual - self.ultimo_registro).total_seconds() / 60
+                if minutos_desde_ultimo < self.config.INTERVALO_MINIMO:
                     self._notificar_erro(
-                        "verificação",
-                        f"Intervalo mínimo não respeitado: {minutos_desde_ultimo:.0f} minutos"
+                        "intervalo",
+                        f"Intervalo mínimo não respeitado: {minutos_desde_ultimo:.0f} minutos.\n"
+                        f"Aguarde {self.config.INTERVALO_MINIMO - minutos_desde_ultimo:.0f} minutos."
                     )
                     return False
 
@@ -207,17 +231,20 @@ class AutomacaoPonto:
             return None
 
     def _calcular_proximo_horario(self):
-        from config.config import Config
+        # Usa a instância do Config armazenada
         agora = datetime.now()
         hora_atual = agora.strftime('%H:%M')
         
-        if hora_atual < Config.HORARIO_ENTRADA:
-            return Config.HORARIO_ENTRADA
-        elif hora_atual < Config.HORARIO_SAIDA:
-            return Config.HORARIO_SAIDA
+        horario_entrada = self.config.HORARIO_ENTRADA
+        horario_saida = self.config.HORARIO_SAIDA
+
+        if hora_atual < horario_entrada:
+            return horario_entrada
+        elif hora_atual < horario_saida:
+            return horario_saida
         else:
             amanha = agora + timedelta(days=1)
-            return f"{Config.HORARIO_ENTRADA} (amanhã)"
+            return f"{horario_entrada} (amanhã)"
 
     def pausar_sistema(self):
         self.sistema_ativo = False
@@ -234,3 +261,43 @@ class AutomacaoPonto:
             self._notificar_sucesso("Sistema encerrado")
         except Exception as e:
             self._notificar_erro("encerramento", str(e))
+            
+    def registrar_ponto_com_retry(self, max_tentativas=3):
+        tentativa = 0
+        while tentativa < max_tentativas:
+            try:
+                if self.registrar_ponto():
+                    return True
+                    
+                tentativa += 1
+                self.logger.warning(f"Tentativa {tentativa} falhou, aguardando para retry...")
+                time.sleep(60)  # Espera 1 minuto entre tentativas
+                
+            except Exception as e:
+                self.logger.error(f"Erro na tentativa {tentativa}: {e}")
+                tentativa += 1
+                
+        self._notificar_erro("registro", f"Falhou após {max_tentativas} tentativas")
+        return False
+
+    def verificar_conexao(self):
+        try:
+            response = requests.get(self.url, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+
+    def verificar_disponibilidade(self):
+        try:
+            if not self.verificar_conexao():
+                self._notificar_erro("conexão", "Sistema indisponível")
+                return False
+                
+            if not self.fazer_login():
+                self._notificar_erro("login", "Não foi possível autenticar")
+                return False
+                
+            return True
+        except Exception as e:
+            self._notificar_erro("verificação", str(e))
+            return False

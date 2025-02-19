@@ -8,7 +8,7 @@ import json
 
 class BackupManager:
     def __init__(self, config):
-        self.config = config
+        self.config = config  # Já está correto, assume que é Config.get_instance()
         self.logger = setup_logger('BackupManager')
 
     def criar_backup(self, tipo='diario'):
@@ -16,19 +16,15 @@ class BackupManager:
             data_atual = datetime.now()
             backup_name = f"backup_{tipo}_{data_atual.strftime('%Y%m%d_%H%M%S')}"
             
-            # Criar diretório de backup
             backup_dir = os.path.join(self.config.BACKUP_DIR, tipo)
             os.makedirs(backup_dir, exist_ok=True)
             
-            # Backup do banco de dados
             db_backup = os.path.join(backup_dir, f"{backup_name}.db")
             shutil.copy2(self.config.DB_PATH, db_backup)
             
-            # Backup das configurações
             config_backup = os.path.join(backup_dir, f"{backup_name}_config.json")
             self._backup_config(config_backup)
             
-            # Backup dos logs
             log_backup = os.path.join(backup_dir, f"{backup_name}_logs.zip")
             shutil.make_archive(log_backup[:-4], 'zip', self.config.LOG_DIR)
             

@@ -1,4 +1,3 @@
-# config/config.py
 import os
 from dotenv import load_dotenv
 import logging
@@ -24,7 +23,6 @@ class Config:
 
     def _load_config(self):
         try:
-            # Procura o arquivo .env em vários locais
             env_locations = [
                 Path.cwd() / '.env',
                 Path.home() / '.sistema-ponto/.env',
@@ -41,44 +39,36 @@ class Config:
             if not env_file:
                 raise ConfigError("Arquivo .env não encontrado")
 
-            load_dotenv(env_file)
-            self._validate_and_load_configs()
+            load_dotenv(dotenv_path=env_file)
             self.logger.info(f"Configurações carregadas de {env_file}")
+            self._validate_and_load_configs()
+
+            self.logger.debug(f"Carregado: HORARIO_ENTRADA={os.getenv('HORARIO_ENTRADA')}, HORARIO_SAIDA={os.getenv('HORARIO_SAIDA')}, SALARIO_BASE={os.getenv('SALARIO_BASE')}")
 
         except Exception as e:
             self.logger.error(f"Erro ao carregar configurações: {e}")
             raise ConfigError(f"Erro ao carregar configurações: {e}")
 
     def _validate_and_load_configs(self):
-        # Configurações do Sistema
         self.SALARIO_BASE = self._get_float('SALARIO_BASE')
         self.URL_SISTEMA = self._get_required('URL_SISTEMA')
         self.LOGIN = self._get_required('LOGIN')
         self.SENHA = self._get_required('SENHA')
 
-        # Configurações de Horário
         self.HORARIO_ENTRADA = self._get_required('HORARIO_ENTRADA')
         self.HORARIO_SAIDA = self._get_required('HORARIO_SAIDA')
         self.INTERVALO_MINIMO = int(self._get_required('INTERVALO_MINIMO', '270'))
-        self.TOLERANCIA_MINUTOS = int(os.getenv('TOLERANCIA_MINUTOS', '5'))
+        self.TOLERANCIA_MINUTOS = int(self._get_required('TOLERANCIA_MINUTOS', '5'))
 
-        # Configurações do Telegram
         self.TELEGRAM_TOKEN = self._get_required('TELEGRAM_TOKEN')
         self.TELEGRAM_CHAT_ID = self._get_required('TELEGRAM_CHAT_ID')
         self.TELEGRAM_ADMIN_IDS = self._get_list('TELEGRAM_ADMIN_IDS', [])
 
-        # Configurações de Banco de Dados
         self.DB_PATH = os.getenv('DB_PATH', '/opt/sistema-ponto/database/ponto.db')
-
-        # Configurações de Log
         self.LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
         self.LOG_DIR = os.getenv('LOG_DIR', '/opt/sistema-ponto/logs')
-
-        # Configurações de Backup
         self.BACKUP_DIR = os.getenv('BACKUP_DIR', '/opt/sistema-ponto/backups')
         self.BACKUP_RETENTION_DAYS = int(os.getenv('BACKUP_RETENTION_DAYS', '30'))
-
-        # Configurações de Cálculos
         self.PERICULOSIDADE = float(os.getenv('PERICULOSIDADE', '0.30'))
         self.ADICIONAL_NOTURNO = float(os.getenv('ADICIONAL_NOTURNO', '0.30'))
         self.HORAS_EXTRAS = {

@@ -1,22 +1,23 @@
-# calculos/trabalhista.py
 from datetime import datetime, timedelta
 import calendar
 import logging
+from config.config import Config
 
 class CalculosTrabalhistas:
     def __init__(self, salario_base):
-        self.salario_base = salario_base
-        self.valor_hora = salario_base / 220
+        self.config = Config.get_instance()
+        self.salario_base = salario_base  # Agora aceita o salário base como parâmetro
+        self.valor_hora = self.salario_base / 220
         self.logger = logging.getLogger('CalculosTrabalhistas')
         
         self.percentuais = {
-            'periculosidade': 0.30,
-            'adicional_noturno': 0.30,
-            'he_60': 0.60,
-            'he_65': 0.65,
-            'he_75': 0.75,
-            'he_100': 1.00,
-            'he_150': 1.50,
+            'periculosidade': self.config.PERICULOSIDADE,
+            'adicional_noturno': self.config.ADICIONAL_NOTURNO,
+            'he_60': self.config.HORAS_EXTRAS['60'],
+            'he_65': self.config.HORAS_EXTRAS['65'],
+            'he_75': self.config.HORAS_EXTRAS['75'],
+            'he_100': self.config.HORAS_EXTRAS['100'],
+            'he_150': self.config.HORAS_EXTRAS['150'],
             'fgts': 0.08
         }
         
@@ -106,10 +107,7 @@ class ProcessadorFolha:
                 'mes': mes,
                 'ano': ano,
                 'horas_normais': 0,
-                'horas_extras': {
-                    '60': 0, '65': 0, '75': 0,
-                    '100': 0, '150': 0
-                },
+                'horas_extras': {'60': 0, '65': 0, '75': 0, '100': 0, '150': 0},
                 'horas_noturnas': 0,
                 'dias_uteis': self.contar_dias_uteis(inicio_periodo, fim_periodo),
                 'domingos_feriados': self.contar_domingos_feriados(inicio_periodo, fim_periodo)
@@ -128,43 +126,29 @@ class ProcessadorFolha:
             return None
 
     def acumular_horas(self, registro, totais):
-        totais['horas_normais'] += registro[4]  # índice das horas normais
+        totais['horas_normais'] += registro[4]
         for idx, tipo in enumerate(['60', '65', '75', '100', '150']):
             totais['horas_extras'][tipo] += registro[5 + idx]
-        totais['horas_noturnas'] += registro[10]  # índice das horas noturnas
+        totais['horas_noturnas'] += registro[10]
 
     def calcular_valores(self, totais):
         try:
-            mes = totais.get('mes') 
-            ano = totais.get('ano')
-            
             valores = {
-                'mes': mes,
-                'ano': ano,
+                'mes': totais['mes'],
+                'ano': totais['ano'],
                 'salario_base': self.calculadora.salario_base,
                 'periculosidade': self.calculadora.calcular_periculosidade(),
                 'horas_normais': self.calculadora.calcular_valor_hora(totais['horas_normais']),
-                'horas_extras': sum(
-                    self.calculadora.calcular_valor_hora(horas, f'he_{tipo}')
-                    for tipo, horas in totais['horas_extras'].items()
-                ),
-                'adicional_noturno': self.calculadora.calcular_valor_hora(
-                    totais['horas_noturnas'], 'noturno'
-                )
+                'horas_extras': sum(self.calculadora.calcular_valor_hora(horas, f'he_{tipo}') for tipo, horas in totais['horas_extras'].items()),
+                'adicional_noturno': self.calculadora.calcular_valor_hora(totais['horas_noturnas'], 'noturno')
             }
 
-            valores['subtotal'] = sum(valores.values())
-            valores['dsr'] = self.calculadora.calcular_dsr(
-                valores['subtotal'] - valores['salario_base'],
-                totais['dias_uteis'],
-                totais['domingos_feriados']
-            )
+            valores['subtotal'] = sum(v for k, v in valores.items() if k not in ['mes', 'ano'])  # Exclui chaves não numéricas
+            valores['dsr'] = self.calculadora.calcular_dsr(valores['subtotal'] - valores['salario_base'], totais['dias_uteis'], totais['domingos_feriados'])
             
             valores['total_proventos'] = valores['subtotal'] + valores['dsr']
             valores['inss'] = self.calculadora.calcular_inss(valores['total_proventos'])
-            valores['irrf'] = self.calculadora.calcular_irrf(
-                valores['total_proventos'] - valores['inss']
-            )
+            valores['irrf'] = self.calculadora.calcular_irrf(valores['total_proventos'] - valores['inss'])
             valores['fgts'] = self.calculadora.calcular_fgts(valores['total_proventos'])
             valores['total_descontos'] = valores['inss'] + valores['irrf']
             valores['liquido'] = valores['total_proventos'] - valores['total_descontos']
@@ -180,7 +164,7 @@ class ProcessadorFolha:
         dias = 0
         data_atual = inicio
         while data_atual <= fim:
-            if data_atual.weekday() < 5:  # 0-4 são dias úteis
+            if data_atual.weekday() < 5:
                 dias += 1
             data_atual += timedelta(days=1)
         return dias
@@ -189,7 +173,7 @@ class ProcessadorFolha:
         dias = 0
         data_atual = inicio
         while data_atual <= fim:
-            if data_atual.weekday() == 6:  # domingo
+            if data_atual.weekday() == 6:
                 dias += 1
             data_atual += timedelta(days=1)
         return dias
