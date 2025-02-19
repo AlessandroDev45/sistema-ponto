@@ -23,32 +23,31 @@ class Config:
             Config._initialized = True
 
     def _load_config(self):
+        """Carrega e valida configurações do ambiente"""
         try:
-            env_locations = [
-                Path.cwd() / '.env',
-                Path.home() / '.sistema-ponto/.env',
-                Path('/opt/sistema-ponto/.env'),
-                Path('/etc/sistema-ponto/.env')
-            ]
-
-            env_file = None
-            for location in env_locations:
-                if location.is_file():
-                    env_file = location
-                    break
-
-            if not env_file:
-                raise ConfigError("Arquivo .env não encontrado")
-
-            load_dotenv(dotenv_path=env_file)
-            self.logger.info(f"Configurações carregadas de {env_file}")
-            self._validate_and_load_configs()
-
-            self.logger.debug(f"Carregado: HORARIO_ENTRADA={os.getenv('HORARIO_ENTRADA')}, HORARIO_SAIDA={os.getenv('HORARIO_SAIDA')}, SALARIO_BASE={os.getenv('SALARIO_BASE')}")
-
+            # Carregar diretórios essenciais
+            self.BACKUP_DIR = os.path.abspath(os.getenv('BACKUP_DIR', './backups'))
+            self.DB_PATH = os.path.abspath(os.getenv('DB_PATH', './database/ponto.db'))
+            
+            # Garantir existência de diretórios
+            os.makedirs(self.BACKUP_DIR, exist_ok=True)
+            os.makedirs(os.path.dirname(self.DB_PATH), exist_ok=True)
+            
+            # Validar horários
+            self.HORARIO_ENTRADA = self._validar_horario('HORARIO_ENTRADA')
+            self.HORARIO_SAIDA = self._validar_horario('HORARIO_SAIDA')
+            
         except Exception as e:
-            self.logger.error(f"Erro ao carregar configurações: {e}")
-            raise ConfigError(f"Erro ao carregar configurações: {e}")
+            self.logger.critical(f"Falha crítica na configuração: {str(e)}")
+            raise RuntimeError("Configuração inválida") from e
+
+    def _validar_horario(self, chave):
+        """Valida formato HH:MM"""
+        valor = os.getenv(chave)
+        try:
+            return datetime.strptime(valor, '%H:%M').time()
+        except ValueError:
+            raise ConfigError(f"Formato inválido para {chave}. Use HH:MM")
         
     def _validate_time(self, key):
         try:

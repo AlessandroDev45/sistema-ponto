@@ -319,20 +319,29 @@ class SistemaPonto:
         sys.exit(0)
 
     def encerrar_sistema(self):
-        """Encerra o sistema graciosamente"""
+        """Encerra o sistema"""
         try:
             self.sistema_ativo = False
             
-            if hasattr(self, 'command_queue'):
-                self.command_queue.join()
+            # Tentativa de backup final
+            try:
+                self.backup_manager.criar_backup('encerramento')
+            except Exception as backup_error:
+                self.logger.error(f"Falha no backup final: {str(backup_error)}")
             
-            self.backup_manager.criar_backup('encerramento')
-            self.automacao.encerrar()
+            # Encerramento seguro do driver
+            try:
+                if hasattr(self, 'automacao') and self.automacao.driver:
+                    self.automacao.driver.quit()
+            except Exception as driver_error:
+                self.logger.error(f"Erro ao fechar driver: {str(driver_error)}")
+            
             self.telegram.enviar_mensagem("🔴 Sistema sendo encerrado")
-            self.logger.info("Sistema encerrado com sucesso")
+            self.logger.info("Encerramento concluído")
             
         except Exception as e:
-            self.logger.error(f"Erro ao encerrar sistema: {e}")
+            self.logger.critical(f"Erro crítico durante encerramento: {str(e)}")
+            os._exit(1)
 
 def main():
     sistema = None

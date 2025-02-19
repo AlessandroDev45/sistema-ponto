@@ -16,19 +16,19 @@ class BackupManager:
             data_atual = datetime.now()
             backup_name = f"backup_{tipo}_{data_atual.strftime('%Y%m%d_%H%M%S')}"
             
+            # Garantir existência do diretório
             backup_dir = os.path.join(self.config.BACKUP_DIR, tipo)
-            os.makedirs(backup_dir, exist_ok=True)
+            os.makedirs(backup_dir, exist_ok=True)  # Cria diretórios recursivamente
             
+            # Backup do banco
             db_backup = os.path.join(backup_dir, f"{backup_name}.db")
             shutil.copy2(self.config.DB_PATH, db_backup)
             
+            # Backup da configuração
             config_backup = os.path.join(backup_dir, f"{backup_name}_config.json")
             self._backup_config(config_backup)
             
-            log_backup = os.path.join(backup_dir, f"{backup_name}_logs.zip")
-            shutil.make_archive(log_backup[:-4], 'zip', self.config.LOG_DIR)
-            
-            self.logger.info(f"Backup {tipo} criado com sucesso: {backup_name}")
+            self.logger.info(f"Backup {tipo} criado em: {db_backup}")
             return True
             
         except Exception as e:

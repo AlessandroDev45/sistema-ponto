@@ -162,56 +162,36 @@ class AutomacaoPonto:
             return {'sucesso': False, 'mensagem': str(e)}
 
     def verificar_horario(self):
+        """Verifica se o horário atual está dentro da janela permitida"""
         try:
             agora = datetime.now().time()
+            
+            # Converter strings para objetos time
             entrada = datetime.strptime(self.config.HORARIO_ENTRADA, '%H:%M').time()
             saida = datetime.strptime(self.config.HORARIO_SAIDA, '%H:%M').time()
 
-        # Calcular diferenças corretamente
+            # Calcular diferenças
             diff_entrada = (datetime.combine(date.today(), agora) - 
-                      datetime.combine(date.today(), entrada)).total_seconds() / 60
+                        datetime.combine(date.today(), entrada)).total_seconds() / 60
+            
             diff_saida = (datetime.combine(date.today(), agora) - 
-                   datetime.combine(date.today(), saida)).total_seconds() / 60
+                    datetime.combine(date.today(), saida)).total_seconds() / 60
 
-
-
-
-            diff_entrada = abs(datetime.combine(datetime.now().date(), agora) - 
-                            datetime.combine(datetime.now().date(), entrada))
-            diff_saida = abs(datetime.combine(datetime.now().date(), agora) - 
-                            datetime.combine(datetime.now().date(), saida))
+            # Determinar status
+            if diff_entrada <= self.config.TOLERANCIA_MINUTOS and diff_entrada >= 0:
+                return {'valido': True, 'tipo': 'entrada'}
             
-            minutos_diff = min(diff_entrada, diff_saida).total_seconds() / 60
+            if diff_saida <= self.config.TOLERANCIA_MINUTOS and diff_saida >= 0:
+                return {'valido': True, 'tipo': 'saida'}
             
-            if minutos_diff <= config.TOLERANCIA_MINUTOS:
-                return {
-                    'valido': True,
-                    'hora_atual': agora,
-                    'diferenca_minutos': 0,
-                    'mensagem': 'Horário dentro da tolerância'
-                }
-            
-            # Determina se é atraso ou hora extra
-            if diff_entrada < diff_saida:
-                tipo = "Atraso" if agora > entrada else "Antecipação"
-                horario_ref = entrada
-            else:
-                tipo = "Hora Extra" if agora > saida else "Saída Antecipada"
-                horario_ref = saida
-                
             return {
                 'valido': False,
-                'hora_atual': agora,
-                'diferenca_minutos': int(minutos_diff),
-                'mensagem': f"{tipo} detectado em relação ao horário {horario_ref.strftime('%H:%M')}"
+                'mensagem': f"Fora da janela permitida (Entrada: {entrada}, Saída: {saida})"
             }
-                
+            
         except Exception as e:
-            self.logger.error(f"Erro ao verificar horário: {e}")
-            return {
-                'valido': False,
-                'mensagem': f"Erro ao verificar horário: {e}"
-            }
+            self.logger.error(f"Erro na verificação de horário: {str(e)}")
+            return {'valido': False, 'mensagem': 'Erro na verificação'}
 
 
     def verificar_status(self):
@@ -251,12 +231,17 @@ class AutomacaoPonto:
         self._notificar_sucesso("Sistema retomado")
 
     def encerrar(self):
+        """Fecha recursos do navegador"""
         try:
             if self.driver:
                 self.driver.quit()
-            self._notificar_sucesso("Sistema encerrado")
+                self.logger.info("Navegador fechado com sucesso")
+                
         except Exception as e:
-            self._notificar_erro("encerramento", str(e))
+            self.logger.error(f"Erro ao fechar navegador: {str(e)}")
+            
+        finally:
+            self.driver = None
             
     def registrar_ponto_com_retry(self, max_tentativas=3):
         for tentativa in range(1, max_tentativas+1):
