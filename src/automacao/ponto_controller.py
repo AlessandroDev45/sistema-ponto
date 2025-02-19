@@ -6,7 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+import config
 from config.config import Config  # Import corretamente para usar get_instance
 import time
 import logging
@@ -119,104 +120,99 @@ class AutomacaoPonto:
 
     def registrar_ponto(self, force=False):
         try:
-            if not force and not self.verificar_horario():
-                return False
+            if not force:
+                status_horario = self.verificar_horario()
+                if not status_horario['valido']:
+                    # Solicita confirmação via Telegram
+                    msg = (
+                        f"⚠️ Registro fora do horário programado!\n"
+                        f"Horário atual: {status_horario['hora_atual']}\n"
+                        f"Diferença: {status_horario['diferenca_minutos']} minutos\n"
+                        f"{status_horario['mensagem']}\n\n"
+                        "Deseja registrar mesmo assim? Digite CONFIRMAR"
+                    )
+                    self.telegram.enviar_mensagem(msg)
+                    return {'aguardando_confirmacao': True, 'status': status_horario}
 
-            if not self.sistema_ativo:
-                self._notificar_erro("registro", "Sistema está pausado")
-                return False
-
-            self.logger.info("Iniciando registro de ponto")
+            # Processo de registro no sistema
             if not self.fazer_login():
-                return False
+                raise Exception("Falha no login")
 
             if not self.navegar_para_ponto():
-                return False
+                raise Exception("Falha ao acessar página de ponto")
 
-            botao_ponto = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="div-swipeButtonText"]'))
-            )
+            self.registrar_no_sistema()
             
-            self.logger.info("Registrando ponto")
-            botao_ponto.click()
-            time.sleep(1)
-            botao_ponto.click()
-            time.sleep(1)
-            
+            # Registra no banco e calcula horas
             agora = datetime.now()
-            self.ultimo_registro = agora
-            
-            self.db.registrar_ponto(
+            registro = self.db.registrar_ponto(
                 agora,
-                "AUTOMATICO" if not force else "MANUAL",
+                "MANUAL" if force else "AUTOMATICO",
                 "SUCESSO"
             )
+
+            if registro:
+                self.calcular_e_notificar_horas(agora)
+                return {'sucesso': True, 'mensagem': 'Ponto registrado com sucesso'}
             
-            msg = (
-                f"✅ Ponto registrado com sucesso!\n"
-                f"Data: {agora.strftime('%d/%m/%Y')}\n"
-                f"Hora: {agora.strftime('%H:%M:%S')}\n"
-                f"Tipo: {'Automático' if not force else 'Manual'}"
-            )
-            self._notificar_sucesso(msg)
-            return True
+            return {'sucesso': False, 'mensagem': 'Falha ao registrar ponto'}
 
         except Exception as e:
-            self._notificar_erro("registro de ponto", str(e))
-            return False
-        finally:
-            try:
-                self.driver.quit()
-                self._configurar_driver()
-            except:
-                pass
+            self.logger.error(f"Erro ao registrar ponto: {e}")
+            return {'sucesso': False, 'mensagem': str(e)}
 
     def verificar_horario(self):
         try:
-            hora_atual = datetime.now()
-            
-            # Usa a instância do Config armazenada em self.config
+            agora = datetime.now().time()
             entrada = datetime.strptime(self.config.HORARIO_ENTRADA, '%H:%M').time()
             saida = datetime.strptime(self.config.HORARIO_SAIDA, '%H:%M').time()
+
+        # Calcular diferenças corretamente
+            diff_entrada = (datetime.combine(date.today(), agora) - 
+                      datetime.combine(date.today(), entrada)).total_seconds() / 60
+            diff_saida = (datetime.combine(date.today(), agora) - 
+                   datetime.combine(date.today(), saida)).total_seconds() / 60
+
+
+
+
+            diff_entrada = abs(datetime.combine(datetime.now().date(), agora) - 
+                            datetime.combine(datetime.now().date(), entrada))
+            diff_saida = abs(datetime.combine(datetime.now().date(), agora) - 
+                            datetime.combine(datetime.now().date(), saida))
             
-            # Adiciona tolerância
-            tolerancia = timedelta(minutes=self.config.TOLERANCIA_MINUTOS)
+            minutos_diff = min(diff_entrada, diff_saida).total_seconds() / 60
             
-            # Verifica se está dentro do horário com tolerância
-            hora_atual_time = hora_atual.time()
-            if not (
-                abs(hora_atual_time.hour - entrada.hour) * 60 + 
-                abs(hora_atual_time.minute - entrada.minute) <= self.config.TOLERANCIA_MINUTOS
-                or
-                abs(hora_atual_time.hour - saida.hour) * 60 + 
-                abs(hora_atual_time.minute - saida.minute) <= self.config.TOLERANCIA_MINUTOS
-            ):
-                self.logger.info(f"Fora do horário de registro: {hora_atual.strftime('%H:%M')}")
-                self._notificar_erro(
-                    "horário",
-                    f"Horário não permitido para registro.\n"
-                    f"Horários permitidos:\n"
-                    f"Entrada: {self.config.HORARIO_ENTRADA} (±{self.config.TOLERANCIA_MINUTOS}min)\n"
-                    f"Saída: {self.config.HORARIO_SAIDA} (±{self.config.TOLERANCIA_MINUTOS}min)"
-                )
-                return False
-
-            # Verifica intervalo mínimo
-            if self.ultimo_registro:
-                minutos_desde_ultimo = (hora_atual - self.ultimo_registro).total_seconds() / 60
-                if minutos_desde_ultimo < self.config.INTERVALO_MINIMO:
-                    self._notificar_erro(
-                        "intervalo",
-                        f"Intervalo mínimo não respeitado: {minutos_desde_ultimo:.0f} minutos.\n"
-                        f"Aguarde {self.config.INTERVALO_MINIMO - minutos_desde_ultimo:.0f} minutos."
-                    )
-                    return False
-
-            return True
-
+            if minutos_diff <= config.TOLERANCIA_MINUTOS:
+                return {
+                    'valido': True,
+                    'hora_atual': agora,
+                    'diferenca_minutos': 0,
+                    'mensagem': 'Horário dentro da tolerância'
+                }
+            
+            # Determina se é atraso ou hora extra
+            if diff_entrada < diff_saida:
+                tipo = "Atraso" if agora > entrada else "Antecipação"
+                horario_ref = entrada
+            else:
+                tipo = "Hora Extra" if agora > saida else "Saída Antecipada"
+                horario_ref = saida
+                
+            return {
+                'valido': False,
+                'hora_atual': agora,
+                'diferenca_minutos': int(minutos_diff),
+                'mensagem': f"{tipo} detectado em relação ao horário {horario_ref.strftime('%H:%M')}"
+            }
+                
         except Exception as e:
-            self._notificar_erro("verificação de horário", str(e))
-            return False
+            self.logger.error(f"Erro ao verificar horário: {e}")
+            return {
+                'valido': False,
+                'mensagem': f"Erro ao verificar horário: {e}"
+            }
+
 
     def verificar_status(self):
         try:
@@ -263,22 +259,22 @@ class AutomacaoPonto:
             self._notificar_erro("encerramento", str(e))
             
     def registrar_ponto_com_retry(self, max_tentativas=3):
-        tentativa = 0
-        while tentativa < max_tentativas:
+        for tentativa in range(1, max_tentativas+1):
             try:
+                self.logger.info(f"Tentativa {tentativa}/{max_tentativas}")
                 if self.registrar_ponto():
                     return True
-                    
-                tentativa += 1
-                self.logger.warning(f"Tentativa {tentativa} falhou, aguardando para retry...")
-                time.sleep(60)  # Espera 1 minuto entre tentativas
+                
+                # Backoff exponencial
+                delay = 2 ** tentativa
+                self.logger.info(f"Esperando {delay} segundos para retentativa...")
+                time.sleep(delay)
                 
             except Exception as e:
-                self.logger.error(f"Erro na tentativa {tentativa}: {e}")
-                tentativa += 1
-                
-        self._notificar_erro("registro", f"Falhou após {max_tentativas} tentativas")
-        return False
+                self.logger.error(f"Erro na tentativa {tentativa}: {str(e)}")
+                if tentativa == max_tentativas:
+                    self._notificar_erro("registro", f"Falha após {max_tentativas} tentativas")
+                    return False
 
     def verificar_conexao(self):
         try:
@@ -301,3 +297,44 @@ class AutomacaoPonto:
         except Exception as e:
             self._notificar_erro("verificação", str(e))
             return False
+        
+        
+    def calcular_e_notificar_horas(self, momento_registro):
+        try:
+            # Busca registros do dia
+            inicio_dia = datetime.combine(momento_registro.date(), datetime.min.time())
+            fim_dia = datetime.combine(momento_registro.date(), datetime.max.time())
+            
+            registros = self.db.obter_registros_periodo(inicio_dia, fim_dia)
+            
+            if len(registros) % 2 == 0:  # Par de registros (entrada/saída)
+                ultimo_par = registros[-2:]  # Pega últimos dois registros
+                entrada = datetime.strptime(ultimo_par[0][1], '%Y-%m-%d %H:%M:%S')
+                saida = datetime.strptime(ultimo_par[1][1], '%Y-%m-%d %H:%M:%S')
+                
+                # Calcula horas trabalhadas
+                delta = saida - entrada
+                horas_total = delta.total_seconds() / 3600
+                
+                # Analisa extras ou faltas
+                config = Config.get_instance()
+                jornada_normal = 8  # horas
+                
+                msg = (
+                    f"✅ Registro realizado com sucesso!\n"
+                    f"Entrada: {entrada.strftime('%H:%M')}\n"
+                    f"Saída: {saida.strftime('%H:%M')}\n"
+                    f"Total: {horas_total:.2f}h\n"
+                )
+                
+                if horas_total > jornada_normal:
+                    extras = horas_total - jornada_normal
+                    msg += f"Horas Extras: {extras:.2f}h"
+                elif horas_total < jornada_normal:
+                    falta = jornada_normal - horas_total
+                    msg += f"Horas Faltantes: {falta:.2f}h"
+                    
+                self.telegram.enviar_mensagem(msg)
+                
+        except Exception as e:
+            self.logger.error(f"Erro ao calcular horas: {e}")

@@ -16,22 +16,28 @@ class WebController:
         self.db = database
         self.driver = None
         self.logger = setup_logger('WebController')
+        
+    
 
     def _inicializar_driver(self):
         try:
             chrome_options = Options()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--headless=new')  # Nova sintaxe
             chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--disable-gpu')
             
-            service = Service()
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            self.driver.maximize_window()
-            self.logger.info("Driver inicializado com sucesso")
+            service = Service(service_args=['--verbose'], log_path='logs/chromedriver.log')
+            
+            self.driver = webdriver.Chrome(
+                service=service,
+                options=chrome_options
+            )
+            self.driver.implicitly_wait(10)
             return True
         except Exception as e:
-            log_exception(self.logger, e, "Erro ao inicializar driver:")
+            self.logger.error(f"Falha ao iniciar driver: {str(e)}")
             return False
 
     def fazer_login(self):

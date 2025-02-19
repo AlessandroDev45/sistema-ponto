@@ -1,0 +1,4 @@
+2025-02-19 18:20:46,766 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 18:20:52,110 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-19 18:21:05,713 - SistemaPonto - INFO - Comando recebido: 🕒 Registrar Ponto
+2025-02-19 18:21:19,654 - SistemaPonto - INFO - Comando recebido: ⏰ Horas Trabalhadas

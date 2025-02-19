@@ -66,3 +66,19 @@
 2025-02-18 22:55:00,091 - SistemaPonto - INFO - Iniciando Sistema de Ponto
 2025-02-18 22:55:00,093 - SistemaPonto - CRITICAL - Erro fatal na inicialização: CalculosTrabalhistas.__init__() takes 1 positional argument but 2 were given
 2025-02-18 22:57:32,621 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:57:45,276 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:58:20,354 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:59:31,927 - SistemaPonto - INFO - Comando recebido: ⏸️ Pausar Sistema
+2025-02-18 22:59:40,179 - SistemaPonto - INFO - Comando recebido: ▶️ Retomar Sistema
+2025-02-18 22:59:47,903 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 22:59:54,878 - SistemaPonto - INFO - Comando recebido: ❌ Encerrar
+2025-02-18 23:00:02,794 - SistemaPonto - INFO - Comando recebido: CONFIRMAR
+2025-02-18 23:00:10,455 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 23:00:14,942 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-19 06:20:18,960 - SistemaPonto - INFO - Comando recebido: \menu
+2025-02-19 06:20:27,574 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-19 06:21:20,031 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-19 07:18:58,237 - SistemaPonto - INFO - Comando recebido: 🕒 Registrar Ponto
+2025-02-19 12:50:05,438 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-19 12:50:12,315 - SistemaPonto - INFO - Comando recebido: ❌ Encerrar
+2025-02-19 12:50:32,228 - SistemaPonto - INFO - Comando recebido: CONFIRMAR

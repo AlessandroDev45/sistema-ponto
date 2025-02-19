@@ -112,7 +112,7 @@ class SistemaPonto:
             agora = datetime.now()
             if (agora - self.ultimo_heartbeat).total_seconds() > 1800:  # 30 minutos
                 self.telegram.enviar_mensagem(
-                    "💓 Sistema online\nÚltimo status: {agora.strftime('%H:%M:%S')}"
+                    f"💓 Sistema online\nÚltimo status: {agora.strftime('%H:%M:%S')}"
                 )
                 self.ultimo_heartbeat = agora
                 
@@ -180,8 +180,8 @@ class SistemaPonto:
             config = self.config  # Já inicializado como instância
             self.logger.debug(f"Usando horários: Entrada={config.HORARIO_ENTRADA}, Saída={config.HORARIO_SAIDA}")
             
-            schedule.every().day.at(config.HORARIO_ENTRADA).do(self.registrar_ponto_automatico)
-            schedule.every().day.at(config.HORARIO_SAIDA).do(self.registrar_ponto_automatico)
+            schedule.every().day.at(str(config.HORARIO_ENTRADA)).do(self.registrar_ponto_automatico)
+            schedule.every().day.at(str(config.HORARIO_SAIDA)).do(self.registrar_ponto_automatico)
             schedule.every(5).seconds.do(self.processar_comandos_telegram)
             schedule.every(5).minutes.do(self.verificar_sistema)
             schedule.every().day.at("23:50").do(self.processar_folha_mensal)
@@ -346,7 +346,7 @@ def main():
         config = Config.get_instance()
         print(f"Horário de entrada: {config.HORARIO_ENTRADA}")
         print(f"Horário de saída: {config.HORARIO_SAIDA}")
-        print(f"Salário base: {config.SALARIO_BASE}")
+       
 
         sistema.executar()
     except KeyboardInterrupt:

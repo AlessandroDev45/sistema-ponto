@@ -1,3 +1,4 @@
+import datetime
 import os
 from dotenv import load_dotenv
 import logging
@@ -48,6 +49,12 @@ class Config:
         except Exception as e:
             self.logger.error(f"Erro ao carregar configurações: {e}")
             raise ConfigError(f"Erro ao carregar configurações: {e}")
+        
+    def _validate_time(self, key):
+        try:
+            return datetime.strptime(os.getenv(key), '%H:%M').time()
+        except ValueError as e:
+            raise ConfigError(f"Formato inválido para {key}. Use HH:MM") from e
 
     def _validate_and_load_configs(self):
         self.SALARIO_BASE = self._get_float('SALARIO_BASE')
@@ -59,6 +66,10 @@ class Config:
         self.HORARIO_SAIDA = self._get_required('HORARIO_SAIDA')
         self.INTERVALO_MINIMO = int(self._get_required('INTERVALO_MINIMO', '270'))
         self.TOLERANCIA_MINUTOS = int(self._get_required('TOLERANCIA_MINUTOS', '5'))
+        self.HORARIO_ENTRADA = self._validate_time('HORARIO_ENTRADA')
+        self.HORARIO_SAIDA = self._validate_time('HORARIO_SAIDA')
+        self.INTERVALO_MINIMO = int(os.getenv('INTERVALO_MINIMO', '270'))
+        self.TOLERANCIA_MINUTOS = int(os.getenv('TOLERANCIA_MINUTOS', '5'))
 
         self.TELEGRAM_TOKEN = self._get_required('TELEGRAM_TOKEN')
         self.TELEGRAM_CHAT_ID = self._get_required('TELEGRAM_CHAT_ID')
