@@ -1,10 +1,19 @@
 # src/utils/backup.py
-import shutil
+import sys
 import os
+from pathlib import Path
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir.parent.parent
+sys.path.append(str(root_dir))
+
+import shutil
 from datetime import datetime, timedelta
 import logging
-from .logger import setup_logger
 import json
+
+from src.utils.logger import setup_logger
 
 class BackupManager:
     def __init__(self, config):

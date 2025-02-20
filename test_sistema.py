@@ -1,13 +1,18 @@
-# test_sistema.py
+import sys
+import os
+from pathlib import Path
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir
+sys.path.append(str(root_dir))
+
 import schedule
 import time
 from datetime import datetime, timedelta
 import holidays
 import logging
-from pathlib import Path
-import sys
 import signal
-import os
 from dotenv import load_dotenv
 
 from src.telegram_controller import TelegramController
@@ -23,8 +28,14 @@ class TestSistemaPonto:
         self.logger.info("[TESTE] Iniciando Sistema de Ponto em modo teste")
         
         try:
-            self.config = Config()
-            self.db = Database('teste_ponto.db')  # Banco de dados específico para testes
+            # Garantir existência dos diretórios
+            os.makedirs("logs_teste", exist_ok=True)
+            os.makedirs("relatorios", exist_ok=True)
+            os.makedirs("backups", exist_ok=True)
+            os.makedirs("database", exist_ok=True)
+            
+            self.config = Config.get_instance()  # Usando get_instance
+            self.db = Database(os.path.join('database', 'teste_ponto.db'))
             self.calculadora = CalculosTrabalhistas(self.config.SALARIO_BASE)
             self.processador_folha = ProcessadorFolha(self.db, self.calculadora)
             self.gerador_relatorios = GeradorRelatorios(self.db, self.calculadora)
@@ -39,7 +50,6 @@ class TestSistemaPonto:
             self.feriados_br = holidays.BR()
             self.sistema_ativo = True
             
-            # Registrar handlers apenas para teste
             signal.signal(signal.SIGINT, self.handle_shutdown)
             signal.signal(signal.SIGTERM, self.handle_shutdown)
             
@@ -54,6 +64,9 @@ class TestSistemaPonto:
         logger = logging.getLogger('TestSistemaPonto')
         logger.setLevel(logging.DEBUG)
         
+        if logger.handlers:  # Evita handlers duplicados
+            return logger
+            
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - [TESTE] %(message)s'
         )
@@ -83,13 +96,13 @@ class TestSistemaPonto:
                 self.telegram.enviar_mensagem(f"[TESTE] ℹ️ {motivo}")
                 return
 
-            # Simula registro sem acessar o sistema real
             self.db.registrar_ponto(agora, "TESTE", "SUCESSO", "Registro simulado")
-            self.telegram.enviar_mensagem(
+            msg = (
                 f"[TESTE] ✅ Ponto simulado com sucesso!\n"
                 f"Data: {agora.strftime('%d/%m/%Y')}\n"
                 f"Hora: {agora.strftime('%H:%M:%S')}"
             )
+            self.telegram.enviar_mensagem(msg)
             
         except Exception as e:
             self.logger.error(f"[TESTE] Erro no registro simulado: {e}")
@@ -110,13 +123,11 @@ class TestSistemaPonto:
         try:
             self.logger.info("[TESTE] Testando comandos do Telegram")
             
-            # Testa cada comando disponível
             comandos_teste = [
                 '/menu',
                 '/status',
                 '/registrar',
-                '/horas 7',
-                '/falhas 7',
+                '/relatorio',
                 '/configuracoes',
                 '/ajuda',
                 '🕒 Registrar Ponto',
@@ -125,8 +136,12 @@ class TestSistemaPonto:
             
             for comando in comandos_teste:
                 self.logger.info(f"[TESTE] Testando comando: {comando}")
-                self.telegram.processar_mensagem({"message_id": 1, "text": comando})
-                time.sleep(2)  # Aguarda entre comandos
+                self.telegram.processar_mensagem({
+                    "message_id": 1, 
+                    "chat": {"id": self.config.TELEGRAM_CHAT_ID},
+                    "text": comando
+                })
+                time.sleep(2)
                 
         except Exception as e:
             self.logger.error(f"[TESTE] Erro ao testar comandos Telegram: {e}")
@@ -184,18 +199,14 @@ class TestSistemaPonto:
             self.telegram.enviar_mensagem("[TESTE] 🟢 Sistema de teste iniciado")
             self.telegram.mostrar_menu()
             
-            # Testa menu e interação básica
             self.testar_comandos_telegram()
             
-            # Simula alguns registros de ponto
             for _ in range(3):
                 self.simular_registro_ponto()
                 time.sleep(5)
             
-            # Testa processamento de folha
             self.testar_processamento_folha()
             
-            # Mantém sistema ativo por um tempo para testar interações
             tempo_teste = 300  # 5 minutos
             self.logger.info(f"[TESTE] Sistema ficará ativo por {tempo_teste} segundos")
             
@@ -214,6 +225,5 @@ class TestSistemaPonto:
 
 if __name__ == "__main__":
     load_dotenv()
-    
     sistema_teste = TestSistemaPonto()
     sistema_teste.executar_testes()

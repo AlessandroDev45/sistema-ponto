@@ -1,7 +1,17 @@
 # src/calculos/processor.py
+import sys
+import os
+from pathlib import Path
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir.parent.parent
+sys.path.append(str(root_dir))
+
 from datetime import datetime, date
 import logging
-from ..utils.logger import setup_logger
+
+from src.utils.logger import setup_logger
 
 class ProcessadorDados:
     def __init__(self, database):

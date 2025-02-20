@@ -1,4 +1,13 @@
 # src/web_controller.py
+import sys
+import os
+from pathlib import Path
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir.parent
+sys.path.append(str(root_dir))
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -8,7 +17,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
 import time
-from .utils.logger import setup_logger, log_exception
+
+from src.utils.logger import setup_logger, log_exception 
 
 class WebController:
     def __init__(self, config, database):

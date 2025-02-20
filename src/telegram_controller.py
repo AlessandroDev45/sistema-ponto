@@ -1,12 +1,18 @@
-import time
-import requests
-import json
-import logging
 import sys
-from datetime import datetime, timedelta
 import os
 from pathlib import Path
-from config.config import Config
+import time
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir.parent
+sys.path.append(str(root_dir))
+
+import requests
+import logging
+from datetime import datetime, timedelta
+import json
+from config.config import Config 
 
 # Ensure root path is added to sys.path
 project_root = str(Path(__file__).parent.parent)
@@ -64,34 +70,33 @@ class TelegramController:
             texto = texto.replace(c, f'\\{c}')
         return texto
 
-    def enviar_mensagem(self, mensagem, keyboard=None):
-        """Envia uma mensagem para o Telegram"""
+    def enviar_mensagem(self, texto, parse_mode=None):
+        """Envia mensagem via Telegram
+        Args:
+            texto (str): O texto da mensagem
+            parse_mode (str, optional): Modo de formatação ('HTML' ou 'MarkdownV2')
+        """
         try:
+            url = f"https://api.telegram.org/bot{self.token}/sendMessage"
             data = {
-                "chat_id": self.chat_id,
-                "text": mensagem,
-                "parse_mode": "HTML",  # Usar HTML para evitar problemas de parsing
-                "disable_web_page_preview": True
+                'chat_id': self.chat_id,
+                'text': texto
             }
 
-            if keyboard:
-                if isinstance(keyboard, list):
-                    data["reply_markup"] = json.dumps({"keyboard": keyboard, "resize_keyboard": True, "one_time_keyboard": False})
-                else:
-                    data["reply_markup"] = json.dumps(keyboard)
+            if parse_mode in ['HTML', 'MarkdownV2']:
+                data['parse_mode'] = parse_mode
 
-            response = requests.post(f"{self.api_url}/sendMessage", json=data)
+            response = requests.post(url, json=data)
             response.raise_for_status()
-            self.logger.info(f"Mensagem enviada com sucesso: {mensagem[:100]}...")
-
+            return True
+                
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Erro na requisição Telegram: {str(e)}")
-            if hasattr(e, 'response'):
+            self.logger.error(f"Erro ao enviar mensagem: {e}")
+            if hasattr(e, 'response') and hasattr(e.response, 'text'):
                 self.logger.error(f"Response: {e.response.text}")
-            print(f"Erro ao enviar mensagem: {str(e)}")
-        except Exception as e:
-            self.logger.error(f"Erro ao enviar mensagem: {str(e)}")
-            print(f"Erro ao enviar mensagem: {str(e)}")
+            return False
+
+ 
 
     def enviar_documento(self, arquivo, caption):
         """Envia um documento para o Telegram"""
@@ -210,7 +215,7 @@ class TelegramController:
             ["📄 Relatório Mensal", "📋 Relatório Anual"],
             ["⏰ Horas Trabalhadas", "❌ Falhas"],
             ["⚙️ Configurações", "❓ Ajuda"],
-            ["❌ Encerrar"]
+            ["❌ Encerrar","🔷 Menu Principal 🔷\n\n"]
         ]
 
         menu_text = (
@@ -240,26 +245,20 @@ class TelegramController:
         self.enviar_mensagem(menu_text, keyboard)
 
     def registrar_ponto_manual(self, args=None):
-        """Registra ponto manualmente via Telegram"""
         try:
-            config = Config.get_instance()
-            agora = datetime.now()
-            motivo = ' '.join(args) if args else "Registro manual via Telegram"
-
-            if self.db.registrar_ponto(agora, "MANUAL", "SUCESSO", motivo):
-                msg = (
-                    f"✅ Ponto registrado manualmente\n"
-                    f"Data: {agora.strftime('%d/%m/%Y')}\n"
-                    f"Hora: {agora.strftime('%H:%M:%S')}\n"
-                    f"Motivo: {motivo}"
-                )
+            if not hasattr(self, 'automacao'):
+                self.enviar_mensagem("❌ Sistema não inicializado")
+                return
+                
+            resultado = self.automacao.registrar_ponto(force=True)
+            
+            if resultado['sucesso']:
+                self.enviar_mensagem("✅ Ponto registrado manualmente com sucesso")
             else:
-                msg = "❌ Erro ao registrar ponto manual"
-
-            self.enviar_mensagem(msg)
-            self.mostrar_menu()
+                self.enviar_mensagem(f"❌ Falha no registro: {resultado['mensagem']}")
+                
         except Exception as e:
-            self.logger.error(f"Erro ao registrar ponto manual: {e}")
+            self.logger.error(f"Erro no registro manual: {e}")
             self.enviar_mensagem(f"❌ Erro: {str(e)}")
 
     def mostrar_status_detalhado(self, args=None):
@@ -572,3 +571,19 @@ class TelegramController:
             os._exit(0)
             return True
         return False
+    def processar_comando_status(self):
+        """Processa o comando de status"""
+        try:
+            if not hasattr(self, 'automacao'):
+                self.enviar_mensagem("❌ Sistema não inicializado corretamente")
+                return
+
+            status = self.automacao.verificar_status()
+            if status and 'mensagem' in status:
+                self.enviar_mensagem(status['mensagem'])
+            else:
+                self.enviar_mensagem("❌ Não foi possível obter o status do sistema")
+                
+        except Exception as e:
+            self.logger.error(f"Erro ao processar comando de status: {e}")
+            self.enviar_mensagem("❌ Erro ao obter status do sistema")

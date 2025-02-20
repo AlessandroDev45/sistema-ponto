@@ -1,4 +1,13 @@
 # relatorios/gerador_relatorios.py
+import sys
+import os
+from pathlib import Path
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir.parent.parent
+sys.path.append(str(root_dir))
+
 from datetime import datetime, timedelta
 import calendar
 import logging
@@ -9,7 +18,8 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import csv
 import json
-from config.config import Config
+
+from config.config import Config 
 
 class GeradorRelatorios:
     def __init__(self, database, calculadora):
@@ -303,3 +313,31 @@ class GeradorRelatorios:
        except Exception as e:
            self.logger.error(f"Erro ao gerar JSON: {e}")
            return None
+    def gerar_relatorio_anual(self, ano, formato='pdf'):
+        try:
+            inicio = datetime(ano, 1, 1)
+            fim = datetime(ano, 12, 31)
+            
+            dados = {
+                'registros': self.db.obter_registros_periodo(inicio, fim),
+                'horas': self.db.obter_horas_trabalhadas_periodo(inicio, fim),
+                'falhas': self.db.obter_falhas_periodo(inicio, fim),
+                'calculos': []
+            }
+            
+            # Coleta cálculos de todos os meses
+            for mes in range(1, 13):
+                calculo = self.db.obter_calculo_mensal(mes, ano)
+                if calculo:
+                    dados['calculos'].append(calculo)
+            
+            if formato == 'pdf':
+                return self.gerar_pdf_anual(dados, ano)
+            elif formato == 'csv':
+                return self.gerar_csv_anual(dados, ano)
+            else:
+                raise ValueError(f"Formato inválido: {formato}")
+                
+        except Exception as e:
+            self.logger.error(f"Erro ao gerar relatório anual: {e}")
+            return None

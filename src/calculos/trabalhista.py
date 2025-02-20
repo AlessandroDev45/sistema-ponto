@@ -1,6 +1,16 @@
+import sys
+import os
+from pathlib import Path
+
+# Adiciona o diretório raiz ao Python Path
+current_dir = Path(__file__).resolve().parent
+root_dir = current_dir.parent.parent
+sys.path.append(str(root_dir))
+
 from datetime import datetime, timedelta
 import calendar
 import logging
+
 from config.config import Config
 
 class CalculosTrabalhistas:

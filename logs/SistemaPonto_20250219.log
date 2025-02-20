@@ -4,3 +4,23 @@
 2025-02-19 18:21:19,654 - SistemaPonto - INFO - Comando recebido: ⏰ Horas Trabalhadas
 2025-02-19 19:25:58,271 - SistemaPonto - INFO - Iniciando Sistema de Ponto
 2025-02-19 19:25:58,272 - SistemaPonto - CRITICAL - Erro fatal na inicialização: Configuração inválida
+2025-02-19 19:26:21,059 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 19:26:21,060 - SistemaPonto - CRITICAL - Erro fatal na inicialização: Configuração inválida
+2025-02-19 19:31:19,030 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 19:31:19,030 - SistemaPonto - CRITICAL - Erro fatal na inicialização: 'Config' object has no attribute 'SALARIO_BASE'
+2025-02-19 23:26:47,791 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 23:26:47,791 - SistemaPonto - CRITICAL - Erro fatal na inicialização: 'Config' object has no attribute 'SALARIO_BASE'
+2025-02-19 23:33:29,872 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 23:34:07,638 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-19 23:34:36,090 - SistemaPonto - INFO - Comando recebido: ⏸️ Pausar Sistema
+2025-02-19 23:34:50,474 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-19 23:43:06,000 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 23:43:06,001 - SistemaPonto - CRITICAL - Erro fatal na inicialização: Configuração inválida
+2025-02-19 23:45:07,309 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 23:45:41,900 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-19 23:45:55,700 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-19 23:56:16,442 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-19 23:56:50,353 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-19 23:58:48,691 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-19 23:58:58,728 - SistemaPonto - INFO - Comando recebido: 🕒 Registrar Ponto
+2025-02-19 23:59:05,304 - SistemaPonto - INFO - Comando recebido: ▶️ Retomar Sistema

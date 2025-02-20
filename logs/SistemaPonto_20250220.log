@@ -1,0 +1,27 @@
+2025-02-20 00:08:52,671 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:09:27,280 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-20 00:09:52,244 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:10:26,917 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-20 00:10:52,075 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-20 00:14:14,787 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:14:14,789 - SistemaPonto - CRITICAL - Erro fatal na inicialização: Configuração inválida
+2025-02-20 00:15:03,725 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:15:38,622 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-20 00:15:44,421 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-20 00:15:50,919 - SistemaPonto - INFO - Comando recebido: ⏸️ Pausar Sistema
+2025-02-20 00:15:58,649 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-20 00:16:05,296 - SistemaPonto - INFO - Comando recebido: 📄 Relatório Mensal
+2025-02-20 00:16:12,190 - SistemaPonto - INFO - Comando recebido: 📋 Relatório Anual
+2025-02-20 00:16:20,025 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-20 00:16:20,889 - SistemaPonto - INFO - Comando recebido: ⏰ Horas Trabalhadas
+2025-02-20 00:16:21,772 - SistemaPonto - INFO - Comando recebido: ⚙️ Configurações
+2025-02-20 00:16:28,522 - SistemaPonto - INFO - Comando recebido: ❓ Ajuda
+2025-02-20 00:16:29,451 - SistemaPonto - INFO - Comando recebido: ❌ Falhas
+2025-02-20 00:16:30,325 - SistemaPonto - INFO - Comando recebido: ❌ Encerrar
+2025-02-20 00:19:52,821 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:20:26,567 - SistemaPonto - CRITICAL - Erro fatal na execução: TelegramController.enviar_mensagem() takes 2 positional arguments but 3 were given
+2025-02-20 00:20:30,616 - SistemaPonto - INFO - Encerramento concluído
+2025-02-20 00:21:45,558 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:22:20,060 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-20 00:30:58,724 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-20 00:31:33,111 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
