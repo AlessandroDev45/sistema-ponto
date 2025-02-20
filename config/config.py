@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import logging
 from pathlib import Path
+import datetime
 
 class ConfigError(Exception):
     pass
@@ -45,10 +46,11 @@ class Config:
         """Valida formato HH:MM"""
         valor = os.getenv(chave)
         try:
-            return datetime.strptime(valor, '%H:%M').time()
+            # Usar datetime.datetime.strptime
+            return datetime.datetime.strptime(valor, '%H:%M').time()
         except ValueError:
             raise ConfigError(f"Formato inválido para {chave}. Use HH:MM")
-        
+            
     def _validate_time(self, key):
         try:
             return datetime.strptime(os.getenv(key), '%H:%M').time()
