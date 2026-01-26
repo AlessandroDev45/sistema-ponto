@@ -1,0 +1,18 @@
+2026-01-26 15:39:14,434 - TestSistemaPonto - INFO - [TESTE] [TESTE] Iniciando Sistema de Ponto em modo teste
+2026-01-26 15:39:21,524 - TestSistemaPonto - INFO - [TESTE] [TESTE] Iniciando bateria de testes
+2026-01-26 15:39:23,517 - TestSistemaPonto - INFO - [TESTE] [TESTE] Abrindo navegador para navegação sem registro
+2026-01-26 15:39:47,264 - TestSistemaPonto - ERROR - [TESTE] [TESTE] Erro na navegação sem registro: 'AutomacaoPonto' object has no attribute '_cleanup_driver'
+2026-01-26 15:39:47,264 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comandos do Telegram
+2026-01-26 15:39:47,265 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /menu
+2026-01-26 15:39:49,266 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /status
+2026-01-26 15:39:51,266 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /registrar
+2026-01-26 15:39:53,267 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /relatorio
+2026-01-26 15:39:55,268 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /configuracoes
+2026-01-26 15:39:57,269 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /ajuda
+2026-01-26 15:39:59,272 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: 🕒 Registrar Ponto
+2026-01-26 15:40:01,294 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: 📊 Status
+2026-01-26 15:40:03,298 - TestSistemaPonto - INFO - [TESTE] [TESTE] Simulando registro de ponto
+2026-01-26 15:40:09,362 - TestSistemaPonto - INFO - [TESTE] [TESTE] Simulando registro de ponto
+2026-01-26 15:40:15,374 - TestSistemaPonto - INFO - [TESTE] [TESTE] Simulando registro de ponto
+2026-01-26 15:40:21,480 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando processamento de folha
+2026-01-26 15:40:21,486 - TestSistemaPonto - INFO - [TESTE] [TESTE] Sistema ficará ativo por 300 segundos

@@ -1,0 +1,17 @@
+2026-01-26 15:57:37,628 - TestSistemaPonto - INFO - [TESTE] [TESTE] Iniciando Sistema de Ponto em modo teste
+2026-01-26 15:57:39,633 - TestSistemaPonto - INFO - [TESTE] [TESTE] Iniciando bateria de testes
+2026-01-26 15:57:41,748 - TestSistemaPonto - INFO - [TESTE] [TESTE] Abrindo navegador para navegação sem registro
+2026-01-26 15:58:16,289 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comandos do Telegram
+2026-01-26 15:58:16,290 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /menu
+2026-01-26 15:58:18,290 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /status
+2026-01-26 15:58:20,292 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /registrar
+2026-01-26 15:58:22,293 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /relatorio
+2026-01-26 15:58:24,294 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /configuracoes
+2026-01-26 15:58:26,294 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: /ajuda
+2026-01-26 15:58:28,295 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: 🕒 Registrar Ponto
+2026-01-26 15:58:30,297 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando comando: 📊 Status
+2026-01-26 15:58:32,298 - TestSistemaPonto - INFO - [TESTE] [TESTE] Simulando registro de ponto
+2026-01-26 15:58:38,554 - TestSistemaPonto - INFO - [TESTE] [TESTE] Simulando registro de ponto
+2026-01-26 15:58:44,652 - TestSistemaPonto - INFO - [TESTE] [TESTE] Simulando registro de ponto
+2026-01-26 15:58:50,915 - TestSistemaPonto - INFO - [TESTE] [TESTE] Testando processamento de folha
+2026-01-26 15:58:52,440 - TestSistemaPonto - INFO - [TESTE] [TESTE] Sistema ficará ativo por 300 segundos

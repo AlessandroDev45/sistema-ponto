@@ -1,0 +1,1 @@
+from .ponto_controller import AutomacaoPonto

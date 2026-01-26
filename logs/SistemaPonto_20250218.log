@@ -1,0 +1,84 @@
+2025-02-18 21:12:07,539 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:12:12,019 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:19:32,589 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:20:07,850 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:25:28,162 - SistemaPonto - ERROR - Erro na verificação do sistema: 'SistemaPonto' object has no attribute 'last_health_check'
+2025-02-18 21:30:22,969 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:30:45,293 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:32:25,832 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:35:17,944 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:35:38,232 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:36:12,629 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:37:19,088 - SistemaPonto - INFO - Comando recebido: ❌ Encerrar
+2025-02-18 21:37:30,504 - SistemaPonto - INFO - Comando recebido: CONFIRMAR
+2025-02-18 21:37:47,293 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:37:51,134 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:39:19,470 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-18 21:39:37,481 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 21:47:23,289 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:47:27,675 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:47:39,412 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:48:13,998 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:49:51,966 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:49:56,193 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:55:16,264 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:55:20,823 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:57:05,938 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 21:57:40,606 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 21:58:00,409 - SistemaPonto - INFO - Comando recebido: ⚙️ Configurações
+2025-02-18 21:58:36,667 - SistemaPonto - INFO - Comando recebido: 📄 Relatório Mensal
+2025-02-18 21:59:26,979 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 22:01:06,861 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:01:11,024 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:01:26,576 - SistemaPonto - INFO - Comando recebido: ❌ Falhas
+2025-02-18 22:01:35,450 - SistemaPonto - INFO - Comando recebido: ⚙️ Configurações
+2025-02-18 22:01:45,438 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 22:01:52,594 - SistemaPonto - INFO - Comando recebido: ⚙️ Configurações
+2025-02-18 22:01:59,878 - SistemaPonto - INFO - Comando recebido: 📄 Relatório Mensal
+2025-02-18 22:06:18,553 - SistemaPonto - ERROR - Erro na verificação do sistema: 'SistemaPonto' object has no attribute 'last_health_check'
+2025-02-18 22:11:40,611 - SistemaPonto - ERROR - Erro na verificação do sistema: 'SistemaPonto' object has no attribute 'last_health_check'
+2025-02-18 22:16:31,792 - SistemaPonto - INFO - Recebido sinal de encerramento
+2025-02-18 22:16:38,413 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:17:12,896 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:19:37,981 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:20:12,664 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:20:23,753 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 22:20:30,411 - SistemaPonto - INFO - Comando recebido: ⏸️ Pausar Sistema
+2025-02-18 22:25:15,747 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:25:50,111 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:29:32,951 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:30:07,549 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:32:33,418 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:33:10,626 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:33:54,670 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:34:36,820 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 22:34:43,827 - SistemaPonto - INFO - Comando recebido: ⏸️ Pausar Sistema
+2025-02-18 22:36:13,338 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:36:49,548 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:37:16,167 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:37:51,586 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:40:42,251 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:41:16,908 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:42:53,786 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:43:27,857 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:53:46,894 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:53:46,896 - SistemaPonto - CRITICAL - Erro fatal na inicialização: CalculosTrabalhistas.__init__() takes 1 positional argument but 2 were given
+2025-02-18 22:55:00,091 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:55:00,093 - SistemaPonto - CRITICAL - Erro fatal na inicialização: CalculosTrabalhistas.__init__() takes 1 positional argument but 2 were given
+2025-02-18 22:57:32,621 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:57:45,276 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 22:58:20,354 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-18 22:59:31,927 - SistemaPonto - INFO - Comando recebido: ⏸️ Pausar Sistema
+2025-02-18 22:59:40,179 - SistemaPonto - INFO - Comando recebido: ▶️ Retomar Sistema
+2025-02-18 22:59:47,903 - SistemaPonto - INFO - Comando recebido: 📊 Status
+2025-02-18 22:59:54,878 - SistemaPonto - INFO - Comando recebido: ❌ Encerrar
+2025-02-18 23:00:02,794 - SistemaPonto - INFO - Comando recebido: CONFIRMAR
+2025-02-18 23:00:10,455 - SistemaPonto - INFO - Iniciando Sistema de Ponto
+2025-02-18 23:00:14,942 - SistemaPonto - INFO - Sistema iniciado e aguardando comandos
+2025-02-19 06:20:18,960 - SistemaPonto - INFO - Comando recebido: \menu
+2025-02-19 06:20:27,574 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-19 06:21:20,031 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-19 07:18:58,237 - SistemaPonto - INFO - Comando recebido: 🕒 Registrar Ponto
+2025-02-19 12:50:05,438 - SistemaPonto - INFO - Comando recebido: /menu
+2025-02-19 12:50:12,315 - SistemaPonto - INFO - Comando recebido: ❌ Encerrar
+2025-02-19 12:50:32,228 - SistemaPonto - INFO - Comando recebido: CONFIRMAR

@@ -1,0 +1,2 @@
+2026-01-26 15:12:24,097 - TestSistemaPonto - INFO - [TESTE] [TESTE] Iniciando Sistema de Ponto em modo teste
+2026-01-26 15:12:24,102 - TestSistemaPonto - CRITICAL - [TESTE] [TESTE] Erro fatal na inicialização: Configuração inválida
