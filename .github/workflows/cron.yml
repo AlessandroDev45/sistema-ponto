@@ -33,6 +33,8 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           PGHOST_FORCE_IPV4: "1"
+          PGHOST_OVERRIDE: ${{ secrets.PGHOST_OVERRIDE }}
+          PGHOSTADDR: ${{ secrets.PGHOSTADDR }}
           CHROME_BIN: "/usr/bin/chromium"
           CHROMEDRIVER_PATH: "/usr/bin/chromedriver"
           SALARIO_BASE: ${{ secrets.SALARIO_BASE }}

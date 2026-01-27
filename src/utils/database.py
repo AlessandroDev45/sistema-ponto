@@ -30,20 +30,31 @@ class Database:
 
     def _connect_postgres(self):
         conninfo = self.database_url
+        parsed = urlparse(conninfo)
+
+        host_override = os.getenv('PGHOST_OVERRIDE')
+        if host_override and parsed.hostname:
+            parsed = parsed._replace(netloc=parsed.netloc.replace(parsed.hostname, host_override))
+            conninfo = urlunparse(parsed)
+
+        hostaddr_override = os.getenv('PGHOSTADDR')
+        if hostaddr_override:
+            query = parse_qs(parsed.query)
+            query['hostaddr'] = [hostaddr_override]
+            parsed = parsed._replace(query=urlencode(query, doseq=True))
+            conninfo = urlunparse(parsed)
 
         force_ipv4 = os.getenv('PGHOST_FORCE_IPV4', '').lower() in {'1', 'true', 'yes'}
-        if force_ipv4:
-            parsed = urlparse(conninfo)
-            if parsed.hostname:
-                try:
-                    ipv4 = socket.gethostbyname(parsed.hostname)
-                    query = parse_qs(parsed.query)
-                    query['hostaddr'] = [ipv4]
-                    new_query = urlencode(query, doseq=True)
-                    parsed = parsed._replace(query=new_query)
-                    conninfo = urlunparse(parsed)
-                except Exception as e:
-                    self.logger.warning(f"Falha ao resolver IPv4 para {parsed.hostname}: {e}")
+        if force_ipv4 and parsed.hostname:
+            try:
+                ipv4 = socket.gethostbyname(parsed.hostname)
+                query = parse_qs(parsed.query)
+                query['hostaddr'] = [ipv4]
+                new_query = urlencode(query, doseq=True)
+                parsed = parsed._replace(query=new_query)
+                conninfo = urlunparse(parsed)
+            except Exception as e:
+                self.logger.warning(f"Falha ao resolver IPv4 para {parsed.hostname}: {e}")
 
         return psycopg.connect(conninfo)
 

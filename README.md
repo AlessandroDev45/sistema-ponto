@@ -72,11 +72,16 @@ Use o workflow em [.github/workflows/cron.yml](.github/workflows/cron.yml) para 
 - HE_75
 - HE_100
 - HE_150
+- PGHOST_OVERRIDE (opcional)
+- PGHOSTADDR (opcional)
 
 1) Ajuste o cron em UTC no workflow. Exemplo (BRT UTC-3):
 
 - 07:30 BRT → 10:30 UTC
 - 17:18 BRT → 20:18 UTC
+
+Se o Supabase não tiver IPv4 no host padrão, use o pooler (host alternativo) e defina
+`PGHOST_OVERRIDE` com o host do pooler, ou `PGHOSTADDR` com um IPv4 direto.
 
 ## Observações
 
