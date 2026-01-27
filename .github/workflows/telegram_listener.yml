@@ -1,0 +1,43 @@
+name: Telegram Listener
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    # Roda a cada 30 minutos entre 7h e 24h (horário UTC = BRT + 3)
+    # 7h BRT = 10h UTC, 24h BRT = 03h UTC do dia seguinte
+    - cron: "0,30 10-23 * * 1-5"   # 10:00-23:30 UTC (7:00-20:30 BRT) seg-sex
+    - cron: "0,30 0-3 * * 2-6"     # 00:00-03:30 UTC (21:00-00:30 BRT) seg-sex
+
+jobs:
+  telegram-listener:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 7  # 5 min sessão + 2 min margem
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Telegram Listener
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+          PGHOST_FORCE_IPV4: "1"
+          URL_SISTEMA: ${{ secrets.URL_SISTEMA }}
+          LOGIN: ${{ secrets.LOGIN }}
+          SENHA: ${{ secrets.SENHA }}
+          SALARIO_BASE: ${{ secrets.SALARIO_BASE }}
+          HORARIO_ENTRADA: ${{ secrets.HORARIO_ENTRADA }}
+          HORARIO_SAIDA: ${{ secrets.HORARIO_SAIDA }}
+        run: python scripts/telegram_listener.py
