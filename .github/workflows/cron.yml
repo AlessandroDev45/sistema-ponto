@@ -25,23 +25,15 @@ jobs:
           chrome-version: stable
         id: setup-chrome
       
-      - name: Setup ChromeDriver
+      - name: Verify Chrome
         run: |
-          # Obtém versão do Chrome
-          CHROME_VERSION=$(${{ steps.setup-chrome.outputs.chrome-path }} --version | grep -oP '\d+' | head -1)
-          echo "Chrome major version: $CHROME_VERSION"
-          
-          # Baixa ChromeDriver correspondente
-          npm install -g chromedriver@$CHROME_VERSION || npm install -g chromedriver
-          
-          # Configura variáveis
           echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
-          
-          # Diagnóstico
-          echo "=== Chrome ==="
+          echo "=== Chrome Path ==="
+          echo "${{ steps.setup-chrome.outputs.chrome-path }}"
+          echo "=== Chrome Version ==="
           ${{ steps.setup-chrome.outputs.chrome-path }} --version
-          echo "=== ChromeDriver ==="
-          chromedriver --version || echo "ChromeDriver instalado via npm"
+          echo "=== Test Headless ==="
+          ${{ steps.setup-chrome.outputs.chrome-path }} --headless=new --no-sandbox --disable-gpu --dump-dom about:blank 2>&1 | head -5 || echo "OK"
 
       - name: Install dependencies
         run: |

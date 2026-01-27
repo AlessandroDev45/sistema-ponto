@@ -15,7 +15,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
 from datetime import date, datetime, timedelta
 import time
 import tempfile
@@ -66,11 +65,9 @@ class AutomacaoPonto:
                 self.logger.info(f"Chrome via CHROME_BIN: {chrome_bin}")
                 chrome_options.binary_location = chrome_bin
             
-            # Sempre usa webdriver-manager para obter ChromeDriver
-            self.logger.info("Obtendo ChromeDriver via webdriver-manager...")
-            service = Service(ChromeDriverManager().install())
-            
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            # Selenium 4.6+ tem Selenium Manager embutido que detecta Chrome/ChromeDriver automaticamente
+            self.logger.info("Iniciando Chrome com Selenium Manager...")
+            self.driver = webdriver.Chrome(options=chrome_options)
             self.driver.implicitly_wait(10)
             self.logger.info("Chrome WebDriver inicializado com sucesso")
             return True
