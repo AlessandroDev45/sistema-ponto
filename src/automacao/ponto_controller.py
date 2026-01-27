@@ -43,23 +43,13 @@ class AutomacaoPonto:
 
             self.logger.info("Iniciando configuração do Chrome...")
             
-            # Detecta se está em ambiente CI (GitHub Actions)
-            is_ci = os.environ.get('CI') == 'true' or os.environ.get('GITHUB_ACTIONS') == 'true'
-            self.logger.info(f"Ambiente CI: {is_ci}")
-            
-            # Log das variáveis de ambiente relevantes
-            chrome_bin = os.environ.get('CHROME_BIN', '')
-            chromedriver_path = os.environ.get('CHROMEDRIVER_PATH', '')
-            self.logger.info(f"CHROME_BIN={chrome_bin}")
-            self.logger.info(f"CHROMEDRIVER_PATH={chromedriver_path}")
-            
             chrome_options = Options()
             
             # Modo headless
             if self.headless:
                 chrome_options.add_argument('--headless=new')
             
-            # Argumentos para headless funcionar em CI
+            # Argumentos para funcionar em CI (GitHub Actions)
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
@@ -68,27 +58,20 @@ class AutomacaoPonto:
             chrome_options.add_argument('--remote-allow-origins=*')
             chrome_options.add_argument('--disable-setuid-sandbox')
             chrome_options.add_argument('--disable-software-rasterizer')
-            chrome_options.add_argument('--disable-background-networking')
             chrome_options.add_argument('--no-first-run')
             chrome_options.add_argument('--no-default-browser-check')
             
-            # Define o binário do Chrome se disponível
-            if chrome_bin and os.path.exists(chrome_bin):
-                self.logger.info(f"Usando Chrome: {chrome_bin}")
-                chrome_options.binary_location = chrome_bin
-            else:
-                self.logger.info("CHROME_BIN não encontrado, usando Chrome do sistema")
+            # Define o binário do Chrome se disponível via variável de ambiente
+            chrome_bin = os.environ.get('CHROME_BIN')
+            if chrome_bin:
+                self.logger.info(f"CHROME_BIN definido: {chrome_bin}")
+                if os.path.exists(chrome_bin):
+                    chrome_options.binary_location = chrome_bin
+                    self.logger.info(f"Usando Chrome: {chrome_bin}")
             
-            # Configura ChromeDriver
-            if chromedriver_path and os.path.exists(chromedriver_path):
-                self.logger.info(f"Usando ChromeDriver: {chromedriver_path}")
-                service = Service(executable_path=chromedriver_path)
-            else:
-                self.logger.info("CHROMEDRIVER_PATH não encontrado, usando Selenium Manager")
-                service = Service()
-            
-            self.logger.info("Iniciando Chrome WebDriver...")
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            # Selenium Manager vai baixar ChromeDriver automaticamente
+            self.logger.info("Iniciando Chrome WebDriver (Selenium Manager)...")
+            self.driver = webdriver.Chrome(options=chrome_options)
             
             self.driver.implicitly_wait(10)
             self.logger.info("Chrome WebDriver inicializado com sucesso")
