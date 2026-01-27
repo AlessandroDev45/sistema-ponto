@@ -75,10 +75,17 @@ class SistemaPonto:
             self.config = Config.get_instance()
             self.logger.debug(f"Config instance: SALARIO_BASE={self.config.SALARIO_BASE}")
             
-            self.db = Database()
+            # Banco de dados é opcional - continua sem persistência se falhar
+            try:
+                self.db = Database()
+                self.logger.info("Banco de dados conectado com sucesso")
+            except Exception as db_error:
+                self.logger.warning(f"Banco de dados indisponível, continuando sem persistência: {db_error}")
+                self.db = None
+            
             self.calculadora = CalculosTrabalhistas(self.config.SALARIO_BASE)
-            self.processador_folha = ProcessadorFolha(self.db, self.calculadora)
-            self.gerador_relatorios = GeradorRelatorios(self.db, self.calculadora)
+            self.processador_folha = ProcessadorFolha(self.db, self.calculadora) if self.db else None
+            self.gerador_relatorios = GeradorRelatorios(self.db, self.calculadora) if self.db else None
             self.backup_manager = BackupManager(self.config)
             
             # Inicializa Telegram e Automação
@@ -251,8 +258,8 @@ class SistemaPonto:
                 self.telegram.enviar_mensagem("⚠️ Sistema de ponto inacessível")
                 return False
                 
-            # Verifica banco de dados
-            if not self.db.verificar_conexao():
+            # Verifica banco de dados (se disponível)
+            if self.db and not self.db.verificar_conexao():
                 self.telegram.enviar_mensagem("⚠️ Problema com banco de dados")
                 return False
                 
@@ -371,6 +378,10 @@ class SistemaPonto:
         try:
             hoje = datetime.now()
             if hoje.day == 20:  # Processa folha no dia 20
+                if not self.processador_folha or not self.gerador_relatorios:
+                    self.logger.warning("Processamento de folha desabilitado (banco de dados indisponível)")
+                    return
+                    
                 mes_anterior = hoje.month - 1 if hoje.month > 1 else 12
                 ano = hoje.year if hoje.month > 1 else hoje.year - 1
                 
@@ -401,6 +412,10 @@ class SistemaPonto:
                 
             tipo = args[0].lower()
             
+            if not self.gerador_relatorios:
+                self.telegram.enviar_mensagem("❌ Relatórios indisponíveis (banco de dados não conectado)")
+                return
+                
             if tipo == "mensal" and len(args) == 3:
                 mes = int(args[1])
                 ano = int(args[2])
