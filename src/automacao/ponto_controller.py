@@ -15,8 +15,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
+from webdriver_manager.chrome import ChromeDriverManager
 from datetime import date, datetime, timedelta
 import time
+import tempfile
 import logging
 
 from config.config import Config
@@ -40,35 +42,28 @@ class AutomacaoPonto:
             if self.driver:
                 return True
 
+            self.logger.info("Iniciando configuração do Chrome...")
+            
             chrome_options = Options()
+            
+            # Modo headless para CI
             if self.headless:
-                chrome_options.add_argument('--headless')
-            if self.incognito:
-                chrome_options.add_argument('--incognito')
+                chrome_options.add_argument('--headless=new')
+            
+            # Argumentos ESSENCIAIS para GitHub Actions / CI
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
             chrome_options.add_argument('--window-size=1920,1080')
-            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-            chrome_options.add_argument('--remote-debugging-port=9222')
-            chrome_options.add_experimental_option(
-                "prefs",
-                {"profile.default_content_setting_values.geolocation": 2}
-            )
-
-            chrome_bin = os.getenv('CHROME_BIN')
-            if chrome_bin:
-                chrome_options.binary_location = chrome_bin
-
-            os.makedirs('logs', exist_ok=True)
-            driver_path = os.getenv('CHROMEDRIVER_PATH')
-
-            if driver_path:
-                service = Service(executable_path=driver_path, log_path=os.path.join('logs', 'chromedriver.log'))
-            else:
-                service = Service(log_path=os.path.join('logs', 'chromedriver.log'))
+            chrome_options.add_argument('--remote-allow-origins=*')
+            
+            # Usa webdriver-manager para obter ChromeDriver automaticamente
+            self.logger.info("Obtendo ChromeDriver via webdriver-manager...")
+            service = Service(ChromeDriverManager().install())
+            
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             self.driver.implicitly_wait(10)
+            self.logger.info("Chrome WebDriver inicializado com sucesso")
             return True
             
         except Exception as e:

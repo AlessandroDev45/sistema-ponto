@@ -9,7 +9,7 @@ on:
 
 jobs:
   registrar-ponto:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,19 +19,17 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Chromium
+      - name: Install Google Chrome Stable
         run: |
+          # Adiciona repositório oficial do Google Chrome
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
           sudo apt-get update
-          sudo apt-get install -y \
-            chromium chromium-driver \
-            libnss3 libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
-            libxrandr2 libxrender1 libatk-bridge2.0-0 libgtk-3-0 libgbm1 \
-            libasound2t64 libnspr4 libu2f-udev fonts-liberation
-
-      - name: Detect Chrome paths
-        run: |
-          echo "CHROME_BIN=$(command -v chromium || command -v chromium-browser)" >> $GITHUB_ENV
-          echo "CHROMEDRIVER_PATH=$(command -v chromedriver)" >> $GITHUB_ENV
+          sudo apt-get install -y google-chrome-stable
+          
+          # Verifica instalação
+          google-chrome --version
+          which google-chrome
 
       - name: Install dependencies
         run: |
@@ -44,8 +42,6 @@ jobs:
           PGHOST_FORCE_IPV4: "1"
           PGHOST_OVERRIDE: ${{ secrets.PGHOST_OVERRIDE }}
           PGHOSTADDR: ${{ secrets.PGHOSTADDR }}
-          CHROME_BIN: ${{ env.CHROME_BIN }}
-          CHROMEDRIVER_PATH: ${{ env.CHROMEDRIVER_PATH }}
           SALARIO_BASE: ${{ secrets.SALARIO_BASE }}
           URL_SISTEMA: ${{ secrets.URL_SISTEMA }}
           LOGIN: ${{ secrets.LOGIN }}
