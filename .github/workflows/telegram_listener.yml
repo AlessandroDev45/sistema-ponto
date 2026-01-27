@@ -3,10 +3,10 @@ name: Telegram Listener
 on:
   workflow_dispatch:  # Manual trigger
   schedule:
-    # Roda a cada 30 minutos entre 7h e 24h (horário UTC = BRT + 3)
+    # Roda a cada 15 minutos entre 7h e 24h (horário UTC = BRT + 3)
     # 7h BRT = 10h UTC, 24h BRT = 03h UTC do dia seguinte
-    - cron: "0,30 10-23 * * 1-5"   # 10:00-23:30 UTC (7:00-20:30 BRT) seg-sex
-    - cron: "0,30 0-3 * * 2-6"     # 00:00-03:30 UTC (21:00-00:30 BRT) seg-sex
+    - cron: "0,15,30,45 10-23 * * 1-5"   # 10:00-23:45 UTC (7:00-20:45 BRT) seg-sex
+    - cron: "0,15,30,45 0-3 * * 2-6"     # 00:00-03:45 UTC (21:00-00:45 BRT) seg-sex
 
 jobs:
   telegram-listener:
