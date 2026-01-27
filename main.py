@@ -149,6 +149,26 @@ class SistemaPonto:
             
         return True, "Dia útil"
 
+    def _obter_periodo_atual(self):
+        """Retorna o período atual: manha, tarde ou noite"""
+        hora = datetime.now().hour
+        if hora < 12:
+            return 'manha', 'manhã'
+        elif hora < 18:
+            return 'tarde', 'tarde'
+        else:
+            return 'noite', 'noite'
+
+    def _verificar_registro_existente(self):
+        """Verifica se já existe registro no período atual"""
+        if not self.db:
+            return False, []
+        
+        hoje = datetime.now().date()
+        periodo_key, _ = self._obter_periodo_atual()
+        registros = self.db.verificar_registro_periodo(hoje, periodo_key)
+        return len(registros) > 0, registros
+
     def registrar_ponto_automatico(self):
         """Registra ponto automaticamente"""
         try:
@@ -160,6 +180,26 @@ class SistemaPonto:
             if not eh_dia_util:
                 self.logger.info(f"Registro ignorado: {motivo}")
                 self.telegram.enviar_mensagem(f"ℹ️ {motivo}")
+                return
+
+            # Verifica se já existe registro no período atual (batido manualmente)
+            ja_registrado, registros = self._verificar_registro_existente()
+            if ja_registrado:
+                periodo_key, periodo_nome = self._obter_periodo_atual()
+                registros_info = []
+                for reg in registros:
+                    data_hora_str = reg[1]
+                    if isinstance(data_hora_str, str):
+                        dt = datetime.strptime(data_hora_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                    else:
+                        dt = data_hora_str
+                    registros_info.append(dt.strftime('%H:%M'))
+                
+                self.logger.info(f"Registro automático ignorado - já existe registro no período: {', '.join(registros_info)}")
+                self.telegram.enviar_mensagem(
+                    f"ℹ️ Registro automático ignorado\n"
+                    f"Já existe registro de {periodo_nome}: {', '.join(registros_info)}"
+                )
                 return
 
             if not self.automacao.verificar_disponibilidade():
@@ -444,6 +484,9 @@ class SistemaPonto:
         try:
             if self.sistema_ativo:
                 self.sistema_ativo = False
+                # Salva estado no banco para persistir entre execuções
+                if self.db:
+                    self.db.registrar_configuracao('sistema_pausado', 'true')
                 self.logger.info("Sistema pausado")
                 self.telegram.enviar_mensagem("⏸️ Sistema pausado")
             else:
@@ -457,6 +500,9 @@ class SistemaPonto:
         try:
             if not self.sistema_ativo:
                 self.sistema_ativo = True
+                # Salva estado no banco para persistir entre execuções
+                if self.db:
+                    self.db.registrar_configuracao('sistema_pausado', 'false')
                 self.logger.info("Sistema retomado")
                 self.telegram.enviar_mensagem("▶️ Sistema retomado")
             else:

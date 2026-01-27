@@ -34,6 +34,8 @@ class TelegramController:
         self.gerador_relatorios = gerador_relatorios
         self.sistema_ativo = True
         self.aguardando_confirmacao = False
+        self.aguardando_confirmacao_ponto = False
+        self.tipo_registro_pendente = None  # 'entrada' ou 'saida'
 
         self.comandos_disponiveis = {
             '/registrar': self.registrar_ponto_manual,
@@ -156,10 +158,20 @@ class TelegramController:
             if (datetime.now() - msg_time).total_seconds() > 30:
                 return
 
+            # Verifica confirmação de encerramento
             if texto == 'CONFIRMAR' and self.aguardando_confirmacao:
                 self.sistema_ativo = False
                 self.enviar_mensagem("🔴 Sistema sendo encerrado")
                 os._exit(0)
+                return
+
+            # Verifica confirmação de registro de ponto duplicado
+            if self.aguardando_confirmacao_ponto:
+                texto_upper = texto.upper().strip()
+                if texto_upper in ['SIM', 'S', 'YES', 'Y', 'CONFIRMAR']:
+                    self.confirmar_registro_ponto(True)
+                else:
+                    self.confirmar_registro_ponto(False)
                 return
 
             acoes_botoes = {
@@ -194,6 +206,9 @@ class TelegramController:
         """Pausa o sistema"""
         if self.sistema_ativo:
             self.sistema_ativo = False
+            # Salva estado no banco para persistir entre execuções
+            if self.db:
+                self.db.registrar_configuracao('sistema_pausado', 'true')
             self.enviar_mensagem("⏸️ Sistema pausado")
             self.mostrar_menu()
         else:
@@ -203,6 +218,9 @@ class TelegramController:
         """Retoma o sistema pausado"""
         if not self.sistema_ativo:
             self.sistema_ativo = True
+            # Salva estado no banco para persistir entre execuções
+            if self.db:
+                self.db.registrar_configuracao('sistema_pausado', 'false')
             self.enviar_mensagem("▶️ Sistema retomado")
             self.mostrar_menu()
         else:
@@ -244,22 +262,123 @@ class TelegramController:
 
         self.enviar_mensagem(menu_text, keyboard)
 
+    def _obter_periodo_atual(self):
+        """Retorna o período atual: manha, tarde ou noite"""
+        hora = datetime.now().hour
+        if hora < 12:
+            return 'manha', 'manhã'
+        elif hora < 18:
+            return 'tarde', 'tarde'
+        else:
+            return 'noite', 'noite'
+
+    def _determinar_tipo_registro(self):
+        """Determina se é entrada ou saída baseado nos registros do dia"""
+        try:
+            hoje = datetime.now().date()
+            registros = self.db.obter_registros_dia(hoje) if self.db else []
+            
+            # Conta entradas e saídas
+            entradas = sum(1 for r in registros if r[2].lower() == 'entrada')
+            saidas = sum(1 for r in registros if r[2].lower() == 'saida')
+            
+            # Se entradas > saídas, próximo é saída
+            if entradas > saidas:
+                return 'saida'
+            return 'entrada'
+        except:
+            return 'entrada'
+
     def registrar_ponto_manual(self, args=None):
+        """Registra ponto manualmente com verificação de duplicidade"""
         try:
             if not hasattr(self, 'automacao'):
                 self.enviar_mensagem("❌ Sistema não inicializado")
                 return
-                
-            resultado = self.automacao.registrar_ponto(force=True)
             
-            if resultado['sucesso']:
-                self.enviar_mensagem("✅ Ponto registrado manualmente com sucesso")
-            else:
-                self.enviar_mensagem(f"❌ Falha no registro: {resultado['mensagem']}")
+            hoje = datetime.now().date()
+            agora = datetime.now()
+            periodo_key, periodo_nome = self._obter_periodo_atual()
+            tipo_registro = self._determinar_tipo_registro()
+            
+            # Verifica se já existe registro no mesmo período
+            if self.db:
+                registros_periodo = self.db.verificar_registro_periodo(hoje, periodo_key)
+                
+                if registros_periodo:
+                    # Já existe registro neste período
+                    registros_info = []
+                    for reg in registros_periodo:
+                        data_hora_str = reg[1]
+                        if isinstance(data_hora_str, str):
+                            dt = datetime.strptime(data_hora_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                        else:
+                            dt = data_hora_str
+                        tipo = reg[2]
+                        registros_info.append(f"  • {dt.strftime('%H:%M')} - {tipo}")
+                    
+                    msg = (
+                        f"⚠️ Já existe(m) registro(s) neste período ({periodo_nome}):\n"
+                        + "\n".join(registros_info) +
+                        f"\n\nDeseja registrar {tipo_registro.upper()} mesmo assim?\n"
+                        "Responda SIM para confirmar ou NÃO para cancelar."
+                    )
+                    self.enviar_mensagem(msg)
+                    self.aguardando_confirmacao_ponto = True
+                    self.tipo_registro_pendente = tipo_registro
+                    return
+            
+            # Não há registro duplicado, registra direto
+            self._executar_registro_ponto(tipo_registro)
                 
         except Exception as e:
             self.logger.error(f"Erro no registro manual: {e}")
             self.enviar_mensagem(f"❌ Erro: {str(e)}")
+
+    def _executar_registro_ponto(self, tipo_registro):
+        """Executa o registro de ponto e mostra resumo"""
+        try:
+            resultado = self.automacao.registrar_ponto(force=True)
+            
+            if resultado['sucesso']:
+                agora = datetime.now()
+                msg = f"✅ {tipo_registro.capitalize()} registrada às {agora.strftime('%H:%M')}"
+                
+                # Se for saída, mostra o total de horas do dia
+                if tipo_registro == 'saida' and self.db:
+                    hoje = agora.date()
+                    total = self.db.calcular_total_horas_dia(hoje)
+                    
+                    if total and total['registros_completos']:
+                        msg += f"\n\n📊 Total do dia: {total['total_formatado']}"
+                        
+                        # Detalhes dos registros
+                        if total['entradas'] and total['saidas']:
+                            msg += "\n\nRegistros:"
+                            for i, (ent, sai) in enumerate(zip(total['entradas'], total['saidas']), 1):
+                                msg += f"\n  {i}º: {ent.strftime('%H:%M')} → {sai.strftime('%H:%M')}"
+                    elif total and not total['registros_completos']:
+                        msg += "\n\n⚠️ Registros incompletos (entradas/saídas não pareados)"
+                
+                self.enviar_mensagem(msg)
+            else:
+                self.enviar_mensagem(f"❌ Falha no registro: {resultado['mensagem']}")
+                
+        except Exception as e:
+            self.logger.error(f"Erro ao executar registro: {e}")
+            self.enviar_mensagem(f"❌ Erro: {str(e)}")
+
+    def confirmar_registro_ponto(self, confirmado):
+        """Processa a confirmação de registro de ponto duplicado"""
+        self.aguardando_confirmacao_ponto = False
+        
+        if confirmado:
+            tipo = self.tipo_registro_pendente or 'entrada'
+            self._executar_registro_ponto(tipo)
+        else:
+            self.enviar_mensagem("❌ Registro cancelado")
+        
+        self.tipo_registro_pendente = None
 
     def mostrar_status_detalhado(self, args=None):
         """Mostra status detalhado do sistema e registros"""

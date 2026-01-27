@@ -441,6 +441,86 @@ class Database:
             self.logger.error(f"Erro ao obter registros do dia: {e}")
             return []
 
+    def verificar_registro_periodo(self, data, periodo):
+        """
+        Verifica se já existe registro no período especificado.
+        periodo: 'manha' (antes das 12h), 'tarde' (12h-18h), 'noite' (após 18h)
+        Retorna: lista de registros do período ou []
+        """
+        try:
+            registros = self.obter_registros_dia(data)
+            registros_periodo = []
+            
+            for reg in registros:
+                data_hora_str = reg[1]
+                if isinstance(data_hora_str, str):
+                    data_hora = datetime.strptime(data_hora_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
+                    data_hora = data_hora_str
+                
+                hora = data_hora.hour
+                
+                if periodo == 'manha' and hora < 12:
+                    registros_periodo.append(reg)
+                elif periodo == 'tarde' and 12 <= hora < 18:
+                    registros_periodo.append(reg)
+                elif periodo == 'noite' and hora >= 18:
+                    registros_periodo.append(reg)
+            
+            return registros_periodo
+        except Exception as e:
+            self.logger.error(f"Erro ao verificar registro do período: {e}")
+            return []
+
+    def calcular_total_horas_dia(self, data):
+        """
+        Calcula o total de horas trabalhadas no dia.
+        Retorna: dict com total_minutos, total_formatado, entradas e saidas
+        """
+        try:
+            registros = self.obter_registros_dia(data)
+            if not registros:
+                return None
+            
+            entradas = []
+            saidas = []
+            
+            for reg in registros:
+                data_hora_str = reg[1]
+                tipo = reg[2]
+                
+                if isinstance(data_hora_str, str):
+                    data_hora = datetime.strptime(data_hora_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
+                    data_hora = data_hora_str
+                
+                if tipo.lower() == 'entrada':
+                    entradas.append(data_hora)
+                elif tipo.lower() == 'saida':
+                    saidas.append(data_hora)
+            
+            # Calcula total de minutos trabalhados
+            total_minutos = 0
+            pares = min(len(entradas), len(saidas))
+            
+            for i in range(pares):
+                delta = saidas[i] - entradas[i]
+                total_minutos += delta.total_seconds() / 60
+            
+            horas = int(total_minutos // 60)
+            minutos = int(total_minutos % 60)
+            
+            return {
+                'total_minutos': total_minutos,
+                'total_formatado': f"{horas}h{minutos:02d}min",
+                'entradas': entradas,
+                'saidas': saidas,
+                'registros_completos': len(entradas) == len(saidas)
+            }
+        except Exception as e:
+            self.logger.error(f"Erro ao calcular total de horas: {e}")
+            return None
+
     def calcular_horas_trabalhadas_dia(self, data):
         """Calcula as horas trabalhadas em um dia específico"""
         try:
