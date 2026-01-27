@@ -1,0 +1,88 @@
+name: Relatórios Automáticos
+
+on:
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: 'Tipo de relatório'
+        required: true
+        default: 'faltas'
+        type: choice
+        options:
+          - faltas
+          - semanal
+          - mensal
+          - anual
+  schedule:
+    # Verificação de faltas: seg-sex às 22h BRT (01h UTC do dia seguinte)
+    - cron: "0 1 * * 2-6"
+    
+    # Relatório semanal: toda segunda às 8h BRT (11h UTC)
+    - cron: "0 11 * * 1"
+    
+    # Relatório mensal: dia 1 de cada mês às 8h BRT (11h UTC)
+    - cron: "0 11 1 * *"
+    
+    # Relatório anual: dia 1 de janeiro às 8h BRT (11h UTC)
+    - cron: "0 11 1 1 *"
+
+jobs:
+  relatorios:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Determinar tipo de relatório
+        id: tipo
+        run: |
+          # Se foi disparado manualmente, usa o input
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tipo=${{ inputs.tipo }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Se foi cron, determina pelo horário/dia
+          HOUR=$(date -u +%H)
+          DAY=$(date -u +%d)
+          MONTH=$(date -u +%m)
+          WEEKDAY=$(date -u +%u)  # 1=segunda, 7=domingo
+          
+          # 01h UTC = verificação de faltas
+          if [ "$HOUR" == "01" ]; then
+            echo "tipo=faltas" >> $GITHUB_OUTPUT
+          # Segunda-feira 11h = semanal
+          elif [ "$WEEKDAY" == "1" ] && [ "$HOUR" == "11" ] && [ "$DAY" != "01" ]; then
+            echo "tipo=semanal" >> $GITHUB_OUTPUT
+          # Dia 1, Janeiro = anual
+          elif [ "$DAY" == "01" ] && [ "$MONTH" == "01" ]; then
+            echo "tipo=anual" >> $GITHUB_OUTPUT
+          # Dia 1 outros meses = mensal
+          elif [ "$DAY" == "01" ]; then
+            echo "tipo=mensal" >> $GITHUB_OUTPUT
+          else
+            echo "tipo=faltas" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Executar relatório
+        env:
+          TIPO_RELATORIO: ${{ steps.tipo.outputs.tipo }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+          PGHOST_FORCE_IPV4: "1"
+        run: |
+          echo "Executando relatório: $TIPO_RELATORIO"
+          python scripts/relatorios_automaticos.py
