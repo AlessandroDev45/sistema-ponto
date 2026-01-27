@@ -19,48 +19,29 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Google Chrome Stable
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+        id: setup-chrome
+      
+      - name: Setup ChromeDriver
         run: |
-          # Remove qualquer Chromium snap existente
-          sudo snap remove chromium 2>/dev/null || true
+          # Obtém versão do Chrome
+          CHROME_VERSION=$(${{ steps.setup-chrome.outputs.chrome-path }} --version | grep -oP '\d+' | head -1)
+          echo "Chrome major version: $CHROME_VERSION"
           
-          # Adiciona repositório oficial do Google Chrome
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          # Baixa ChromeDriver correspondente
+          npm install -g chromedriver@$CHROME_VERSION || npm install -g chromedriver
           
-          # Obtém versão do Chrome e baixa ChromeDriver compatível
-          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+' | head -1)
-          CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d. -f1)
-          echo "Chrome version: $CHROME_VERSION (major: $CHROME_MAJOR)"
-          
-          # Baixa ChromeDriver usando Chrome for Testing
-          CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}.0/linux64/chromedriver-linux64.zip"
-          echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
-          wget -q "$CHROMEDRIVER_URL" -O /tmp/chromedriver.zip || {
-            # Fallback: tenta com a API de versões
-            LATEST_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_MAJOR}")
-            CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${LATEST_URL}/linux64/chromedriver-linux64.zip"
-            echo "Fallback URL: $CHROMEDRIVER_URL"
-            wget -q "$CHROMEDRIVER_URL" -O /tmp/chromedriver.zip
-          }
-          
-          unzip -q /tmp/chromedriver.zip -d /tmp/
-          sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-          
-          # Define variáveis de ambiente
-          echo "CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
-          echo "CHROMEDRIVER_PATH=/usr/local/bin/chromedriver" >> $GITHUB_ENV
+          # Configura variáveis
+          echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
           
           # Diagnóstico
           echo "=== Chrome ==="
-          google-chrome --version
+          ${{ steps.setup-chrome.outputs.chrome-path }} --version
           echo "=== ChromeDriver ==="
-          chromedriver --version
-          echo "=== Test Chrome Headless ==="
-          timeout 10 google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank 2>&1 | head -5 || echo "Test completed"
+          chromedriver --version || echo "ChromeDriver instalado via npm"
 
       - name: Install dependencies
         run: |
