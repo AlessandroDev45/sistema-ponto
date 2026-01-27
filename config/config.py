@@ -92,6 +92,8 @@ class Config:
     def _validar_horario(self, chave):
         """Valida formato HH:MM:SS"""
         valor = os.getenv(chave)
+        if not valor:
+            raise ConfigError(f"Variável {chave} não definida")
         try:
             # Adiciona segundos se não fornecidos
             if len(valor.split(':')) == 2:

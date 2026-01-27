@@ -95,6 +95,42 @@ class TelegramListener:
             return "▶️ Sistema RETOMADO\nO registro automático está ativado."
         
         elif texto in ['/status', 'status', '📊 status']:
+            return self.mostrar_status()
+        
+        elif texto in ['/registrar', 'registrar', '🕒 registrar ponto']:
+            return self.executar_registro()
+        
+        elif texto in ['/horas', 'horas', '⏰ horas trabalhadas']:
+            return self.mostrar_horas()
+        
+        elif texto in ['/falhas', 'falhas', '❌ falhas']:
+            return self.mostrar_falhas()
+        
+        elif texto in ['/relatorio', 'relatorio', '📄 relatório mensal']:
+            return self.gerar_relatorio_mensal()
+        
+        elif texto in ['/menu', 'menu', '🔷 menu principal']:
+            return self.mostrar_menu()
+        
+        elif texto in ['/ajuda', 'ajuda', '/help', '❓ ajuda']:
+            return (
+                "<b>📋 Comandos Disponíveis</b>\n\n"
+                "🕒 /registrar - Registrar ponto agora\n"
+                "⏸️ /pausar - Pausar registros automáticos\n"
+                "▶️ /retomar - Retomar registros automáticos\n"
+                "📊 /status - Ver status do sistema\n"
+                "⏰ /horas - Horas trabalhadas hoje\n"
+                "❌ /falhas - Ver falhas recentes\n"
+                "📄 /relatorio - Relatório do mês\n"
+                "📋 /menu - Mostrar menu\n"
+                "❓ /ajuda - Esta ajuda"
+            )
+        
+        return None  # Comando não reconhecido
+
+    def mostrar_status(self):
+        """Mostra status do sistema"""
+        try:
             pausado = False
             if self.db:
                 estado = self.db.obter_configuracao('sistema_pausado')
@@ -102,6 +138,8 @@ class TelegramListener:
             
             hoje = datetime.now().date()
             registros_hoje = []
+            total_horas = None
+            
             if self.db:
                 registros = self.db.obter_registros_dia(hoje)
                 for reg in registros:
@@ -111,31 +149,131 @@ class TelegramListener:
                     else:
                         dt = data_hora_str
                     registros_hoje.append(f"  • {dt.strftime('%H:%M')} - {reg[2]}")
+                
+                total_horas = self.db.calcular_total_horas_dia(hoje)
             
             status = "🔴 Pausado" if pausado else "🟢 Ativo"
             msg = f"<b>📊 Status do Sistema</b>\n\nEstado: {status}\n\n"
             msg += f"<b>Registros de Hoje ({hoje.strftime('%d/%m')}):</b>\n"
+            
             if registros_hoje:
                 msg += "\n".join(registros_hoje)
+                if total_horas and total_horas.get('registros_completos'):
+                    msg += f"\n\n📊 Total: {total_horas['total_formatado']}"
             else:
                 msg += "Nenhum registro"
             
             return msg
-        
-        elif texto in ['/registrar', 'registrar', '🕒 registrar ponto']:
-            return self.executar_registro()
-        
-        elif texto in ['/ajuda', 'ajuda', '/help', '❓ ajuda']:
-            return (
-                "<b>📋 Comandos Disponíveis</b>\n\n"
-                "/registrar - Registrar ponto agora\n"
-                "/pausar - Pausar registros automáticos\n"
-                "/retomar - Retomar registros automáticos\n"
-                "/status - Ver status do sistema\n"
-                "/ajuda - Mostrar esta ajuda"
-            )
-        
-        return None  # Comando não reconhecido
+        except Exception as e:
+            return f"❌ Erro ao obter status: {e}"
+
+    def mostrar_horas(self):
+        """Mostra horas trabalhadas hoje"""
+        try:
+            if not self.db:
+                return "❌ Banco de dados não disponível"
+            
+            hoje = datetime.now().date()
+            total = self.db.calcular_total_horas_dia(hoje)
+            
+            if not total:
+                return "📊 Nenhum registro de horas hoje"
+            
+            msg = f"<b>⏰ Horas Trabalhadas - {hoje.strftime('%d/%m/%Y')}</b>\n\n"
+            
+            if total['entradas'] and total['saidas']:
+                msg += "<b>Registros:</b>\n"
+                for i, (ent, sai) in enumerate(zip(total['entradas'], total['saidas']), 1):
+                    delta = sai - ent
+                    horas = int(delta.total_seconds() // 3600)
+                    minutos = int((delta.total_seconds() % 3600) // 60)
+                    msg += f"  {i}º: {ent.strftime('%H:%M')} → {sai.strftime('%H:%M')} ({horas}h{minutos:02d}min)\n"
+            
+            if total.get('registros_completos'):
+                msg += f"\n<b>Total:</b> {total['total_formatado']}"
+            else:
+                msg += "\n⚠️ Registros incompletos (falta entrada ou saída)"
+            
+            return msg
+        except Exception as e:
+            return f"❌ Erro ao calcular horas: {e}"
+
+    def mostrar_falhas(self):
+        """Mostra falhas recentes"""
+        try:
+            if not self.db:
+                return "❌ Banco de dados não disponível"
+            
+            # Busca falhas dos últimos 7 dias
+            hoje = datetime.now()
+            inicio = hoje - timedelta(days=7)
+            falhas = self.db.obter_falhas_periodo(inicio, hoje)
+            
+            if not falhas:
+                return "✅ Nenhuma falha registrada nos últimos 7 dias"
+            
+            msg = "<b>❌ Últimas Falhas (7 dias)</b>\n\n"
+            for f in falhas[-5:]:  # Últimas 5
+                data = f[1] if len(f) > 1 else "N/A"
+                if isinstance(data, str):
+                    try:
+                        dt = datetime.strptime(data.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                        data = dt.strftime('%d/%m %H:%M')
+                    except:
+                        pass
+                erro = f[3] if len(f) > 3 else "Erro desconhecido"
+                msg += f"• {data}: {str(erro)[:40]}...\n"
+            
+            return msg
+        except Exception as e:
+            return f"❌ Erro ao buscar falhas: {e}"
+
+    def gerar_relatorio_mensal(self):
+        """Gera resumo do mês atual"""
+        try:
+            if not self.db:
+                return "❌ Banco de dados não disponível"
+            
+            hoje = datetime.now()
+            inicio_mes = hoje.replace(day=1)
+            
+            # Busca registros do mês
+            registros = self.db.obter_registros_periodo(inicio_mes, hoje)
+            
+            if not registros:
+                return f"📄 Nenhum registro em {hoje.strftime('%B/%Y')}"
+            
+            # Conta dias trabalhados
+            dias = set()
+            for reg in registros:
+                data_str = reg[1]
+                if isinstance(data_str, str):
+                    dt = datetime.strptime(data_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
+                    dt = data_str
+                dias.add(dt.date())
+            
+            msg = f"<b>📄 Relatório - {hoje.strftime('%B/%Y')}</b>\n\n"
+            msg += f"📅 Dias trabalhados: {len(dias)}\n"
+            msg += f"📝 Total de registros: {len(registros)}\n"
+            
+            return msg
+        except Exception as e:
+            return f"❌ Erro ao gerar relatório: {e}"
+
+    def mostrar_menu(self):
+        """Mostra menu de comandos"""
+        return (
+            "<b>🔷 Menu Principal</b>\n\n"
+            "🕒 /registrar - Bater ponto\n"
+            "📊 /status - Status atual\n"
+            "⏰ /horas - Horas de hoje\n"
+            "📄 /relatorio - Relatório do mês\n"
+            "❌ /falhas - Ver falhas\n"
+            "⏸️ /pausar - Pausar sistema\n"
+            "▶️ /retomar - Retomar sistema\n"
+            "❓ /ajuda - Ajuda completa"
+        )
     
     def executar_registro(self):
         """Executa o registro de ponto"""
