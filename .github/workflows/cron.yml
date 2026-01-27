@@ -10,10 +10,6 @@ on:
 jobs:
   registrar-ponto:
     runs-on: ubuntu-22.04
-    env:
-      # Força as variáveis de ambiente no nível do job
-      CHROME_BIN: /usr/bin/google-chrome-stable
-      CHROMEDRIVER_PATH: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,9 +41,8 @@ jobs:
           ls -la /usr/bin/google-chrome*
           /usr/bin/google-chrome-stable --version
           
-          echo "=== Verificando que snap chromium foi removido ==="
-          which chromium || echo "chromium não encontrado (OK!)"
-          ls /snap/bin/chromium 2>/dev/null || echo "snap chromium removido (OK!)"
+          # Define variáveis com nomes que não conflitam com as do runner
+          echo "GOOGLE_CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -85,4 +80,5 @@ jobs:
           HE_100: ${{ secrets.HE_100 }}
           HE_150: ${{ secrets.HE_150 }}
         run: |
+          echo "GOOGLE_CHROME_BIN=$GOOGLE_CHROME_BIN"
           python scripts/run_once.py

@@ -61,13 +61,27 @@ class AutomacaoPonto:
             chrome_options.add_argument('--no-first-run')
             chrome_options.add_argument('--no-default-browser-check')
             
-            # Define o binário do Chrome se disponível via variável de ambiente
-            chrome_bin = os.environ.get('CHROME_BIN')
-            if chrome_bin:
-                self.logger.info(f"CHROME_BIN definido: {chrome_bin}")
-                if os.path.exists(chrome_bin):
-                    chrome_options.binary_location = chrome_bin
-                    self.logger.info(f"Usando Chrome: {chrome_bin}")
+            # Define o binário do Chrome - prioriza GOOGLE_CHROME_BIN (nossa variável)
+            # depois CHROME_BIN (variável padrão), e por último tenta caminho conhecido
+            chrome_bin = os.environ.get('GOOGLE_CHROME_BIN') or os.environ.get('CHROME_BIN')
+            
+            # Se não achou nas variáveis, tenta caminhos conhecidos
+            if not chrome_bin or not os.path.exists(chrome_bin):
+                known_paths = [
+                    '/usr/bin/google-chrome-stable',
+                    '/usr/bin/google-chrome',
+                    '/usr/bin/chromium-browser',
+                ]
+                for path in known_paths:
+                    if os.path.exists(path):
+                        chrome_bin = path
+                        break
+            
+            if chrome_bin and os.path.exists(chrome_bin):
+                self.logger.info(f"Usando Chrome: {chrome_bin}")
+                chrome_options.binary_location = chrome_bin
+            else:
+                self.logger.info("Chrome não encontrado em caminhos conhecidos, deixando Selenium decidir")
             
             # Selenium Manager vai baixar ChromeDriver automaticamente
             self.logger.info("Iniciando Chrome WebDriver (Selenium Manager)...")
