@@ -30,6 +30,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
           
+          # Define variáveis de ambiente corretamente
+          echo "CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
+          echo "GOOGLE_CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
+          
           # Diagnóstico completo
           echo "=== Chrome Version ==="
           google-chrome --version

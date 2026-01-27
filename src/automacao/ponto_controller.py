@@ -57,24 +57,29 @@ class AutomacaoPonto:
             chrome_options.add_argument('--disable-software-rasterizer')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--disable-setuid-sandbox')
-            chrome_options.add_argument('--single-process')
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--remote-allow-origins=*')
             
-            # Detecta o binário do Chrome automaticamente
+            # Detecta o binário do Chrome - prioriza variáveis de ambiente
             import shutil
-            chrome_paths = [
-                shutil.which('google-chrome'),
-                shutil.which('google-chrome-stable'),
-                '/usr/bin/google-chrome',
-                '/usr/bin/google-chrome-stable',
-            ]
+            chrome_bin = os.environ.get('CHROME_BIN') or os.environ.get('GOOGLE_CHROME_BIN')
             
-            for chrome_path in chrome_paths:
-                if chrome_path and os.path.exists(chrome_path):
-                    self.logger.info(f"Chrome encontrado em: {chrome_path}")
-                    chrome_options.binary_location = chrome_path
-                    break
+            if chrome_bin and os.path.exists(chrome_bin):
+                self.logger.info(f"Chrome via env var: {chrome_bin}")
+                chrome_options.binary_location = chrome_bin
+            else:
+                chrome_paths = [
+                    '/usr/bin/google-chrome-stable',
+                    '/usr/bin/google-chrome',
+                    shutil.which('google-chrome-stable'),
+                    shutil.which('google-chrome'),
+                ]
+                
+                for chrome_path in chrome_paths:
+                    if chrome_path and os.path.exists(chrome_path):
+                        self.logger.info(f"Chrome encontrado em: {chrome_path}")
+                        chrome_options.binary_location = chrome_path
+                        break
             
             # Usa webdriver-manager para obter ChromeDriver automaticamente
             self.logger.info("Obtendo ChromeDriver via webdriver-manager...")
