@@ -112,6 +112,19 @@ class TelegramListener:
         elif texto in ['/menu', 'menu', '🔷 menu principal']:
             return self.mostrar_menu()
         
+        elif texto in ['/horarios', 'horarios', '⏰ horários']:
+            return self.mostrar_horarios()
+        
+        elif texto.startswith('/entrada ') or texto.startswith('entrada '):
+            # /entrada 07:30
+            horario = texto.split(' ', 1)[1].strip()
+            return self.alterar_horario('entrada', horario)
+        
+        elif texto.startswith('/saida ') or texto.startswith('saida '):
+            # /saida 17:18
+            horario = texto.split(' ', 1)[1].strip()
+            return self.alterar_horario('saida', horario)
+        
         elif texto in ['/ajuda', 'ajuda', '/help', '❓ ajuda']:
             return (
                 "<b>📋 Comandos Disponíveis</b>\n\n"
@@ -123,6 +136,9 @@ class TelegramListener:
                 "❌ /falhas - Ver falhas recentes\n"
                 "📄 /relatorio - Relatório do mês\n"
                 "📋 /menu - Mostrar menu\n"
+                "⏰ /horarios - Ver horários configurados\n"
+                "/entrada HH:MM - Alterar horário entrada\n"
+                "/saida HH:MM - Alterar horário saída\n"
                 "❓ /ajuda - Esta ajuda"
             )
         
@@ -166,6 +182,67 @@ class TelegramListener:
             return msg
         except Exception as e:
             return f"❌ Erro ao obter status: {e}"
+
+    def mostrar_horarios(self):
+        """Mostra os horários configurados para registro automático"""
+        try:
+            if not self.db:
+                return "❌ Banco de dados não disponível"
+            
+            entrada = self.db.obter_configuracao('horario_entrada') or os.environ.get('HORARIO_ENTRADA', '07:30')
+            saida = self.db.obter_configuracao('horario_saida') or os.environ.get('HORARIO_SAIDA', '17:18')
+            
+            return (
+                f"<b>⏰ Horários Configurados</b>\n\n"
+                f"🌅 Entrada: <b>{entrada}</b>\n"
+                f"🌇 Saída: <b>{saida}</b>\n\n"
+                f"<i>Para alterar:</i>\n"
+                f"/entrada HH:MM - Altera entrada\n"
+                f"/saida HH:MM - Altera saída\n\n"
+                f"<i>Exemplo:</i> /entrada 08:00"
+            )
+        except Exception as e:
+            return f"❌ Erro ao obter horários: {e}"
+
+    def alterar_horario(self, tipo, horario):
+        """Altera o horário de entrada ou saída"""
+        try:
+            if not self.db:
+                return "❌ Banco de dados não disponível"
+            
+            # Valida formato HH:MM
+            import re
+            if not re.match(r'^([01]?[0-9]|2[0-3]):([0-5][0-9])$', horario):
+                return (
+                    f"❌ Formato inválido: <b>{horario}</b>\n\n"
+                    f"Use o formato HH:MM\n"
+                    f"<i>Exemplo:</i> /entrada 08:00"
+                )
+            
+            # Normaliza para HH:MM (com zero à esquerda)
+            partes = horario.split(':')
+            horario_normalizado = f"{int(partes[0]):02d}:{partes[1]}"
+            
+            if tipo == 'entrada':
+                chave = 'horario_entrada'
+                emoji = '🌅'
+                nome = 'ENTRADA'
+            else:
+                chave = 'horario_saida'
+                emoji = '🌇'
+                nome = 'SAÍDA'
+            
+            # Salva no banco
+            self.db.registrar_configuracao(chave, horario_normalizado)
+            
+            return (
+                f"✅ Horário de {nome} alterado!\n\n"
+                f"{emoji} Novo horário: <b>{horario_normalizado}</b>\n\n"
+                f"<i>O registro automático usará este horário.</i>\n"
+                f"⚠️ Lembre-se de atualizar o cron no GitHub se necessário."
+            )
+        except Exception as e:
+            return f"❌ Erro ao alterar horário: {e}"
 
     def mostrar_horas(self):
         """Mostra horas trabalhadas hoje"""
