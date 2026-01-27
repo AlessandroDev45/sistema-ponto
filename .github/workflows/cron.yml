@@ -22,7 +22,11 @@ jobs:
       - name: Install Chromium
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium chromium-driver
+          sudo apt-get install -y \
+            chromium chromium-driver \
+            libnss3 libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
+            libxrandr2 libxrender1 libatk-bridge2.0-0 libgtk-3-0 libgbm1 \
+            libasound2 libnspr4 libu2f-udev fonts-liberation
 
       - name: Detect Chrome paths
         run: |
