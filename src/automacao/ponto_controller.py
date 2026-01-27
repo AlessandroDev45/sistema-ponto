@@ -43,35 +43,37 @@ class AutomacaoPonto:
 
             self.logger.info("Iniciando configuração do Chrome...")
             
+            # Detecta se está em ambiente CI (GitHub Actions)
+            is_ci = os.environ.get('CI') == 'true' or os.environ.get('GITHUB_ACTIONS') == 'true'
+            self.logger.info(f"Ambiente CI: {is_ci}")
+            
             chrome_options = Options()
             
-            # Modo headless para CI
+            # Modo headless
             if self.headless:
                 chrome_options.add_argument('--headless=new')
             
-            # Argumentos ESSENCIAIS para GitHub Actions / CI - ordem importa!
+            # Argumentos básicos para todos os ambientes
             chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-setuid-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--disable-software-rasterizer')
             chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-background-networking')
-            chrome_options.add_argument('--disable-default-apps')
-            chrome_options.add_argument('--disable-sync')
-            chrome_options.add_argument('--disable-translate')
-            chrome_options.add_argument('--disable-web-security')
-            chrome_options.add_argument('--no-first-run')
-            chrome_options.add_argument('--no-default-browser-check')
-            chrome_options.add_argument('--single-process')
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--remote-allow-origins=*')
-            chrome_options.add_argument('--ignore-certificate-errors')
             
-            # Criar diretório temporário para user-data-dir
-            user_data_dir = tempfile.mkdtemp(prefix='chrome_')
-            chrome_options.add_argument(f'--user-data-dir={user_data_dir}')
-            self.logger.info(f"User data dir: {user_data_dir}")
+            # Argumentos adicionais para CI
+            if is_ci:
+                chrome_options.add_argument('--disable-setuid-sandbox')
+                chrome_options.add_argument('--disable-software-rasterizer')
+                chrome_options.add_argument('--disable-background-networking')
+                chrome_options.add_argument('--disable-default-apps')
+                chrome_options.add_argument('--disable-sync')
+                chrome_options.add_argument('--disable-translate')
+                chrome_options.add_argument('--no-first-run')
+                chrome_options.add_argument('--no-default-browser-check')
+                chrome_options.add_argument('--ignore-certificate-errors')
+                # --single-process apenas no Linux CI (causa crash no Windows)
+                chrome_options.add_argument('--single-process')
             
             # Detecta o binário do Chrome - prioriza variável de ambiente
             chrome_bin = os.environ.get('CHROME_BIN')
@@ -79,21 +81,16 @@ class AutomacaoPonto:
             if chrome_bin and os.path.exists(chrome_bin):
                 self.logger.info(f"Chrome via CHROME_BIN: {chrome_bin}")
                 chrome_options.binary_location = chrome_bin
-            else:
-                self.logger.warning("CHROME_BIN não definido ou não existe")
             
             # Configura ChromeDriver
             chromedriver_path = os.environ.get('CHROMEDRIVER_PATH')
             
             if chromedriver_path and os.path.exists(chromedriver_path):
                 self.logger.info(f"ChromeDriver via CHROMEDRIVER_PATH: {chromedriver_path}")
-                service = Service(
-                    executable_path=chromedriver_path,
-                    log_output=os.path.join(tempfile.gettempdir(), 'chromedriver.log')
-                )
+                service = Service(executable_path=chromedriver_path)
             else:
-                self.logger.warning("CHROMEDRIVER_PATH não definido, usando Selenium Manager")
-                service = Service(log_output=os.path.join(tempfile.gettempdir(), 'chromedriver.log'))
+                self.logger.info("Usando Selenium Manager para ChromeDriver")
+                service = Service()
             
             self.logger.info("Iniciando Chrome WebDriver...")
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -104,14 +101,6 @@ class AutomacaoPonto:
             
         except Exception as e:
             self.logger.error(f"Erro ao configurar driver: {e}")
-            # Tenta ler log do ChromeDriver para diagnóstico
-            try:
-                log_path = os.path.join(tempfile.gettempdir(), 'chromedriver.log')
-                if os.path.exists(log_path):
-                    with open(log_path, 'r') as f:
-                        self.logger.error(f"ChromeDriver log: {f.read()[-2000:]}")
-            except:
-                pass
             if self.telegram:
                 self.telegram.enviar_mensagem(f"❌ Erro ao configurar driver: {e}")
             raise
