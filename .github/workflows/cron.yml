@@ -10,6 +10,10 @@ on:
 jobs:
   registrar-ponto:
     runs-on: ubuntu-22.04
+    env:
+      # Força as variáveis de ambiente no nível do job
+      CHROME_BIN: /usr/bin/google-chrome-stable
+      CHROMEDRIVER_PATH: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,8 +25,12 @@ jobs:
 
       - name: Install Chrome
         run: |
-          # Remove snap chromium que causa problemas
+          # Remove snap chromium que causa problemas com Selenium
           sudo snap remove chromium 2>/dev/null || true
+          sudo rm -f /snap/bin/chromium 2>/dev/null || true
+          
+          # Remove chromium do apt também se existir
+          sudo apt-get remove -y chromium-browser chromium 2>/dev/null || true
           
           # Adiciona repositório oficial do Google Chrome
           wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
@@ -33,12 +41,13 @@ jobs:
           sudo apt-get install -y google-chrome-stable
           
           # Verifica instalação
-          echo "=== Chrome Version ==="
-          google-chrome --version
-          which google-chrome
+          echo "=== Chrome instalado ==="
+          ls -la /usr/bin/google-chrome*
+          /usr/bin/google-chrome-stable --version
           
-          # Define variáveis
-          echo "CHROME_BIN=$(which google-chrome)" >> $GITHUB_ENV
+          echo "=== Verificando que snap chromium foi removido ==="
+          which chromium || echo "chromium não encontrado (OK!)"
+          ls /snap/bin/chromium 2>/dev/null || echo "snap chromium removido (OK!)"
 
       - name: Install dependencies
         run: |
