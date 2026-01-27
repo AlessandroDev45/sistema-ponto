@@ -349,6 +349,9 @@ class TelegramListener:
             "❌ /falhas - Ver falhas\n"
             "⏸️ /pausar - Pausar sistema\n"
             "▶️ /retomar - Retomar sistema\n"
+            "⏰ /horarios - Ver horários\n"
+            "/entrada HH:MM - Alterar entrada\n"
+            "/saida HH:MM - Alterar saída\n"
             "❓ /ajuda - Ajuda completa"
         )
     
