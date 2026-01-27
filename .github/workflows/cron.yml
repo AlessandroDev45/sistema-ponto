@@ -30,19 +30,37 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
           
-          # Define variáveis de ambiente corretamente
-          echo "CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
-          echo "GOOGLE_CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
+          # Obtém versão do Chrome e baixa ChromeDriver compatível
+          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+' | head -1)
+          CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d. -f1)
+          echo "Chrome version: $CHROME_VERSION (major: $CHROME_MAJOR)"
           
-          # Diagnóstico completo
-          echo "=== Chrome Version ==="
+          # Baixa ChromeDriver usando Chrome for Testing
+          CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}.0/linux64/chromedriver-linux64.zip"
+          echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
+          wget -q "$CHROMEDRIVER_URL" -O /tmp/chromedriver.zip || {
+            # Fallback: tenta com a API de versões
+            LATEST_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_MAJOR}")
+            CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${LATEST_URL}/linux64/chromedriver-linux64.zip"
+            echo "Fallback URL: $CHROMEDRIVER_URL"
+            wget -q "$CHROMEDRIVER_URL" -O /tmp/chromedriver.zip
+          }
+          
+          unzip -q /tmp/chromedriver.zip -d /tmp/
+          sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          
+          # Define variáveis de ambiente
+          echo "CHROME_BIN=/usr/bin/google-chrome-stable" >> $GITHUB_ENV
+          echo "CHROMEDRIVER_PATH=/usr/local/bin/chromedriver" >> $GITHUB_ENV
+          
+          # Diagnóstico
+          echo "=== Chrome ==="
           google-chrome --version
-          echo "=== Chrome Location ==="
-          which google-chrome
-          which google-chrome-stable || true
-          ls -la /usr/bin/google-chrome* || true
+          echo "=== ChromeDriver ==="
+          chromedriver --version
           echo "=== Test Chrome Headless ==="
-          google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom https://www.google.com 2>&1 | head -20 || echo "Chrome headless test completed"
+          timeout 10 google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank 2>&1 | head -5 || echo "Test completed"
 
       - name: Install dependencies
         run: |

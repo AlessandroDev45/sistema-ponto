@@ -81,9 +81,15 @@ class AutomacaoPonto:
                         chrome_options.binary_location = chrome_path
                         break
             
-            # Usa webdriver-manager para obter ChromeDriver automaticamente
-            self.logger.info("Obtendo ChromeDriver via webdriver-manager...")
-            service = Service(ChromeDriverManager().install())
+            # Usa ChromeDriver do sistema (instalado no CI) ou webdriver-manager como fallback
+            chromedriver_path = os.environ.get('CHROMEDRIVER_PATH')
+            
+            if chromedriver_path and os.path.exists(chromedriver_path):
+                self.logger.info(f"Usando ChromeDriver: {chromedriver_path}")
+                service = Service(chromedriver_path)
+            else:
+                self.logger.info("Obtendo ChromeDriver via webdriver-manager...")
+                service = Service(ChromeDriverManager().install())
             
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             self.driver.implicitly_wait(10)
