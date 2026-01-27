@@ -3,6 +3,8 @@ import sqlite3
 from datetime import datetime
 import logging
 import os
+import socket
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 try:
     import psycopg
@@ -23,8 +25,27 @@ class Database:
 
     def _get_connection(self):
         if self.backend == 'postgres':
-            return psycopg.connect(self.database_url)
+            return self._connect_postgres()
         return sqlite3.connect(self.db_file)
+
+    def _connect_postgres(self):
+        conninfo = self.database_url
+
+        force_ipv4 = os.getenv('PGHOST_FORCE_IPV4', '').lower() in {'1', 'true', 'yes'}
+        if force_ipv4:
+            parsed = urlparse(conninfo)
+            if parsed.hostname:
+                try:
+                    ipv4 = socket.gethostbyname(parsed.hostname)
+                    query = parse_qs(parsed.query)
+                    query['hostaddr'] = [ipv4]
+                    new_query = urlencode(query, doseq=True)
+                    parsed = parsed._replace(query=new_query)
+                    conninfo = urlunparse(parsed)
+                except Exception as e:
+                    self.logger.warning(f"Falha ao resolver IPv4 para {parsed.hostname}: {e}")
+
+        return psycopg.connect(conninfo)
 
     def _format_query(self, query: str) -> str:
         if self.backend == 'postgres':

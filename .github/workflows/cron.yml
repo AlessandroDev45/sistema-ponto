@@ -32,6 +32,7 @@ jobs:
       - name: Run registrar
         env:
           PYTHONUNBUFFERED: "1"
+          PGHOST_FORCE_IPV4: "1"
           CHROME_BIN: "/usr/bin/chromium"
           CHROMEDRIVER_PATH: "/usr/bin/chromedriver"
           SALARIO_BASE: ${{ secrets.SALARIO_BASE }}
