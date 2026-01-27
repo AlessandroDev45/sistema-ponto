@@ -1,0 +1,62 @@
+name: Registrar ponto (cron)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Horários em UTC (BRT+3). Ajuste se necessário.
+    - cron: "30 10 * * 1-5"
+    - cron: "18 20 * * 1-5"
+
+jobs:
+  registrar-ponto:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium chromium-driver
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run registrar
+        env:
+          PYTHONUNBUFFERED: "1"
+          CHROME_BIN: "/usr/bin/chromium"
+          CHROMEDRIVER_PATH: "/usr/bin/chromedriver"
+          SALARIO_BASE: ${{ secrets.SALARIO_BASE }}
+          URL_SISTEMA: ${{ secrets.URL_SISTEMA }}
+          LOGIN: ${{ secrets.LOGIN }}
+          SENHA: ${{ secrets.SENHA }}
+          HORARIO_ENTRADA: ${{ secrets.HORARIO_ENTRADA }}
+          HORARIO_SAIDA: ${{ secrets.HORARIO_SAIDA }}
+          INTERVALO_MINIMO: ${{ secrets.INTERVALO_MINIMO }}
+          TOLERANCIA_MINUTOS: ${{ secrets.TOLERANCIA_MINUTOS }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_ADMIN_IDS: ${{ secrets.TELEGRAM_ADMIN_IDS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          LOG_DIR: "./logs"
+          BACKUP_DIR: "./backups"
+          BACKUP_RETENTION_DAYS: ${{ secrets.BACKUP_RETENTION_DAYS }}
+          PERICULOSIDADE: ${{ secrets.PERICULOSIDADE }}
+          ADICIONAL_NOTURNO: ${{ secrets.ADICIONAL_NOTURNO }}
+          HE_60: ${{ secrets.HE_60 }}
+          HE_65: ${{ secrets.HE_65 }}
+          HE_75: ${{ secrets.HE_75 }}
+          HE_100: ${{ secrets.HE_100 }}
+          HE_150: ${{ secrets.HE_150 }}
+        run: |
+          python scripts/run_once.py

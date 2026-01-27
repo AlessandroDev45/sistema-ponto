@@ -1,0 +1,9 @@
+.env
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+logs/
+logs_teste/
+backups/
+relatorios/

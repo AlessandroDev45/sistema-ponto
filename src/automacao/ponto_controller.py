@@ -51,8 +51,18 @@ class AutomacaoPonto:
                 "prefs",
                 {"profile.default_content_setting_values.geolocation": 2}
             )
-            
-            service = Service(log_path=os.path.join('logs', 'chromedriver.log'))
+
+            chrome_bin = os.getenv('CHROME_BIN')
+            if chrome_bin:
+                chrome_options.binary_location = chrome_bin
+
+            os.makedirs('logs', exist_ok=True)
+            driver_path = os.getenv('CHROMEDRIVER_PATH')
+
+            if driver_path:
+                service = Service(executable_path=driver_path, log_path=os.path.join('logs', 'chromedriver.log'))
+            else:
+                service = Service(log_path=os.path.join('logs', 'chromedriver.log'))
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             self.driver.implicitly_wait(10)
             return True

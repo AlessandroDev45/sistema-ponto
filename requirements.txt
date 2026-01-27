@@ -12,3 +12,4 @@ fpdf
 xlsxwriter
 psutil
 reportlab
+psycopg[binary]
