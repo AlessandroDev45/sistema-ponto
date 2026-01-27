@@ -47,49 +47,44 @@ class AutomacaoPonto:
             is_ci = os.environ.get('CI') == 'true' or os.environ.get('GITHUB_ACTIONS') == 'true'
             self.logger.info(f"Ambiente CI: {is_ci}")
             
+            # Log das variáveis de ambiente relevantes
+            chrome_bin = os.environ.get('CHROME_BIN', '')
+            chromedriver_path = os.environ.get('CHROMEDRIVER_PATH', '')
+            self.logger.info(f"CHROME_BIN={chrome_bin}")
+            self.logger.info(f"CHROMEDRIVER_PATH={chromedriver_path}")
+            
             chrome_options = Options()
             
             # Modo headless
             if self.headless:
                 chrome_options.add_argument('--headless=new')
             
-            # Argumentos básicos para todos os ambientes
+            # Argumentos para headless funcionar em CI
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--remote-allow-origins=*')
+            chrome_options.add_argument('--disable-setuid-sandbox')
+            chrome_options.add_argument('--disable-software-rasterizer')
+            chrome_options.add_argument('--disable-background-networking')
+            chrome_options.add_argument('--no-first-run')
+            chrome_options.add_argument('--no-default-browser-check')
             
-            # Argumentos adicionais para CI
-            if is_ci:
-                chrome_options.add_argument('--disable-setuid-sandbox')
-                chrome_options.add_argument('--disable-software-rasterizer')
-                chrome_options.add_argument('--disable-background-networking')
-                chrome_options.add_argument('--disable-default-apps')
-                chrome_options.add_argument('--disable-sync')
-                chrome_options.add_argument('--disable-translate')
-                chrome_options.add_argument('--no-first-run')
-                chrome_options.add_argument('--no-default-browser-check')
-                chrome_options.add_argument('--ignore-certificate-errors')
-                # --single-process apenas no Linux CI (causa crash no Windows)
-                chrome_options.add_argument('--single-process')
-            
-            # Detecta o binário do Chrome - prioriza variável de ambiente
-            chrome_bin = os.environ.get('CHROME_BIN')
-            
+            # Define o binário do Chrome se disponível
             if chrome_bin and os.path.exists(chrome_bin):
-                self.logger.info(f"Chrome via CHROME_BIN: {chrome_bin}")
+                self.logger.info(f"Usando Chrome: {chrome_bin}")
                 chrome_options.binary_location = chrome_bin
+            else:
+                self.logger.info("CHROME_BIN não encontrado, usando Chrome do sistema")
             
             # Configura ChromeDriver
-            chromedriver_path = os.environ.get('CHROMEDRIVER_PATH')
-            
             if chromedriver_path and os.path.exists(chromedriver_path):
-                self.logger.info(f"ChromeDriver via CHROMEDRIVER_PATH: {chromedriver_path}")
+                self.logger.info(f"Usando ChromeDriver: {chromedriver_path}")
                 service = Service(executable_path=chromedriver_path)
             else:
-                self.logger.info("Usando Selenium Manager para ChromeDriver")
+                self.logger.info("CHROMEDRIVER_PATH não encontrado, usando Selenium Manager")
                 service = Service()
             
             self.logger.info("Iniciando Chrome WebDriver...")

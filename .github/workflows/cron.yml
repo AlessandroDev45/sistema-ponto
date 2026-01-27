@@ -61,6 +61,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Debug Chrome Setup
+        run: |
+          echo "=== Variáveis de Ambiente ==="
+          echo "CHROME_BIN=$CHROME_BIN"
+          echo "CHROMEDRIVER_PATH=$CHROMEDRIVER_PATH"
+          echo "=== Verificando arquivos ==="
+          ls -la /opt/chrome-linux64/ || echo "Diretório chrome não encontrado"
+          ls -la /usr/local/bin/chromedriver || echo "ChromeDriver não encontrado"
+          echo "=== Teste rápido do Chrome ==="
+          $CHROME_BIN --version || echo "Falha ao executar Chrome"
+          $CHROMEDRIVER_PATH --version || echo "Falha ao executar ChromeDriver"
+
       - name: Run registrar
         env:
           PYTHONUNBUFFERED: "1"
