@@ -53,6 +53,9 @@ class RelatoriosAutomaticos:
     def verificar_faltas_dia(self, data):
         """Verifica se houve falta em um dia específico"""
         try:
+            if self.db is None:
+                print("Banco de dados não conectado")
+                return None
             registros = self.db.obter_registros_dia(data)
             
             # Conta entradas e saídas
@@ -82,6 +85,9 @@ class RelatoriosAutomaticos:
             return
         
         # Verifica se está pausado
+        if self.db is None:
+            print("Banco de dados não conectado")
+            return
         estado = self.db.obter_configuracao('sistema_pausado')
         if estado == 'true':
             print("Sistema pausado - não verifica faltas")
@@ -123,6 +129,10 @@ class RelatoriosAutomaticos:
 
     def gerar_relatorio_semanal(self):
         """Gera e envia relatório semanal (últimos 7 dias)"""
+        if self.db is None:
+            print("Banco de dados não conectado")
+            return
+        
         hoje = datetime.now().date()
         inicio = hoje - timedelta(days=7)
         
@@ -205,6 +215,10 @@ class RelatoriosAutomaticos:
         else:
             fim = datetime(ano, mes + 1, 1).date() - timedelta(days=1)
         
+        if self.db is None:
+            print("Banco de dados não conectado")
+            return
+        
         registros = self.db.obter_registros_periodo(inicio, fim)
         
         # Conta dias trabalhados
@@ -244,6 +258,10 @@ class RelatoriosAutomaticos:
 
     def gerar_relatorio_anual(self):
         """Gera e envia relatório do ano anterior"""
+        if self.db is None:
+            print("Banco de dados não conectado")
+            return
+        
         ano = datetime.now().year - 1
         inicio = datetime(ano, 1, 1).date()
         fim = datetime(ano, 12, 31).date()
