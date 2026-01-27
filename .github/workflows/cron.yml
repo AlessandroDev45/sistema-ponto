@@ -19,21 +19,38 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Setup Chrome
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-        id: setup-chrome
-      
-      - name: Verify Chrome
+      - name: Install Chrome for Testing
         run: |
-          echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
-          echo "=== Chrome Path ==="
-          echo "${{ steps.setup-chrome.outputs.chrome-path }}"
-          echo "=== Chrome Version ==="
-          ${{ steps.setup-chrome.outputs.chrome-path }} --version
+          # Instala dependências necessárias
+          sudo apt-get update
+          sudo apt-get install -y wget unzip xvfb libxss1 libappindicator3-1 libgbm1 libasound2 fonts-liberation libatk-bridge2.0-0 libgtk-3-0
+          
+          # Obtém a última versão estável do Chrome for Testing
+          CHROME_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE")
+          echo "Chrome for Testing version: $CHROME_VERSION"
+          
+          # Baixa Chrome for Testing
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" -O /tmp/chrome.zip
+          unzip -q /tmp/chrome.zip -d /opt/
+          sudo ln -sf /opt/chrome-linux64/chrome /usr/local/bin/google-chrome
+          
+          # Baixa ChromeDriver correspondente
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" -O /tmp/chromedriver.zip
+          unzip -q /tmp/chromedriver.zip -d /tmp/
+          sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          
+          # Define variáveis de ambiente
+          echo "CHROME_BIN=/opt/chrome-linux64/chrome" >> $GITHUB_ENV
+          echo "CHROMEDRIVER_PATH=/usr/local/bin/chromedriver" >> $GITHUB_ENV
+          
+          # Diagnóstico
+          echo "=== Chrome ==="
+          /opt/chrome-linux64/chrome --version
+          echo "=== ChromeDriver ==="
+          chromedriver --version
           echo "=== Test Headless ==="
-          ${{ steps.setup-chrome.outputs.chrome-path }} --headless=new --no-sandbox --disable-gpu --dump-dom about:blank 2>&1 | head -5 || echo "OK"
+          /opt/chrome-linux64/chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank 2>&1 | head -3 || echo "OK"
 
       - name: Install dependencies
         run: |
