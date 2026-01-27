@@ -21,15 +21,24 @@ jobs:
 
       - name: Install Google Chrome Stable
         run: |
+          # Remove qualquer Chromium snap existente
+          sudo snap remove chromium 2>/dev/null || true
+          
           # Adiciona repositório oficial do Google Chrome
           wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
           
-          # Verifica instalação
+          # Diagnóstico completo
+          echo "=== Chrome Version ==="
           google-chrome --version
+          echo "=== Chrome Location ==="
           which google-chrome
+          which google-chrome-stable || true
+          ls -la /usr/bin/google-chrome* || true
+          echo "=== Test Chrome Headless ==="
+          google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom https://www.google.com 2>&1 | head -20 || echo "Chrome headless test completed"
 
       - name: Install dependencies
         run: |
