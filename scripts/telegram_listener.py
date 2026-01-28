@@ -259,7 +259,7 @@ class TelegramListener:
         try:
             import base64
             
-            github_token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN')
+            github_token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN') or os.environ.get('token-sistema-ponto')
             if not github_token:
                 print("Token do GitHub não configurado para atualizar cron")
                 return False

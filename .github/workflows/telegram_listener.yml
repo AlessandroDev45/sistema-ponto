@@ -41,4 +41,5 @@ jobs:
           HORARIO_ENTRADA: ${{ secrets.HORARIO_ENTRADA }}
           HORARIO_SAIDA: ${{ secrets.HORARIO_SAIDA }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          token-sistema-ponto: ${{ secrets.TOKEN_SISTEMA_PONTO }}
         run: python scripts/telegram_listener.py
