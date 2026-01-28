@@ -554,14 +554,11 @@ on:
                 print(f"⚠️ Chat ID não corresponde. Esperado: {self.chat_id}, Recebido: {msg_chat_id}")
                 continue
             
-            # Verifica se mensagem é recente (últimos 10 minutos)
+            # REMOVIDO: Filtro de mensagens antigas
+            # Não descartamos mais mensagens por idade - melhor processar atrasadas que nunca!
             msg_time = datetime.fromtimestamp(message.get('date', 0))
             idade = (datetime.now() - msg_time).total_seconds()
-            print(f"⏰ Idade da mensagem: {idade:.0f}s")
-            
-            if idade > 600:  # 10 minutos em vez de 5
-                print(f"⚠️ Mensagem muito antiga, ignorando")
-                continue
+            print(f"⏰ Idade da mensagem: {int(idade)}s ({int(idade/60)}min atrás)")
             
             print(f"🔍 Processando comando: {texto}")
             resposta = self.processar_comando(texto)
