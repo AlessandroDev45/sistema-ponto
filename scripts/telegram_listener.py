@@ -17,6 +17,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 
+from config.config import Config
+
 # Tempo máximo de sessão ativa (segundos)
 TEMPO_SESSAO = 300  # 5 minutos
 INTERVALO_POLLING = 3  # segundos entre verificações
@@ -233,12 +235,16 @@ class TelegramListener:
         
         elif texto in ['/registrar', 'registrar', '🕒 registrar ponto']:
             # Pede confirmação via botão inline
-            agora = datetime.now()
+            try:
+                config = Config.get_instance()
+                agora = config.get_now()
+            except Exception as e:
+                print(f"⚠️ Erro ao obter horário: {e}")
+                agora = datetime.now()
             
             # BLOQUEIO TEMPORÁRIO: Não permite registro agora
             print("⛔ Registro BLOQUEADO - não permitido neste momento")
-            self.enviar_mensagem("⛔ <b>Registro bloqueado</b>\n\nNão é permitido registrar ponto agora.\nTente mais tarde.")
-            return None  # Não envia botões
+            return "⛔ <b>Registro bloqueado</b>\n\nNão é permitido registrar ponto agora.\nTente mais tarde."
         
         elif texto in ['/horas', 'horas', '⏰ horas trabalhadas']:
             return self.mostrar_horas()
@@ -298,7 +304,12 @@ class TelegramListener:
                 except Exception as e:
                     print(f"⚠️ Erro ao verificar pausa: {e}")
             
-            hoje = datetime.now().date()
+            try:
+                config = Config.get_instance()
+                hoje = config.get_now().date()
+            except Exception as e:
+                print(f"⚠️ Erro ao obter config: {e}")
+                hoje = datetime.now().date()
             registros_hoje = []
             total_horas = None
             
@@ -341,6 +352,11 @@ class TelegramListener:
     def mostrar_horarios(self):
         """Mostra os horários configurados para registro automático"""
         try:
+            try:
+                config = Config.get_instance()
+            except Exception as e:
+                print(f"⚠️ Erro ao obter config: {e}")
+            
             if not self.db:
                 return "❌ Banco de dados não disponível"
             
@@ -774,7 +790,11 @@ on:
     
     def executar(self):
         """Loop principal - verifica comandos e mantém sessão ativa se necessário"""
-        print(f"🤖 Telegram Listener iniciado às {datetime.now().strftime('%H:%M:%S')}")
+        try:
+            config = Config.get_instance()
+            print(f"🤖 Telegram Listener iniciado às {config.get_now().strftime('%H:%M:%S')})")
+        except Exception as e:
+            print(f"🤖 Telegram Listener iniciado (erro ao obter hora: {e})")
         print(f"⏱️ Sessão máxima: {TEMPO_SESSAO // 60} minutos")
         print(f"📱 Chat ID: {self.chat_id}")
         
@@ -806,7 +826,12 @@ on:
             # REMOVIDO: Filtro de mensagens antigas
             # Não descartamos mais mensagens por idade - melhor processar atrasadas que nunca!
             msg_time = datetime.fromtimestamp(message.get('date', 0))
-            idade = (datetime.now() - msg_time).total_seconds()
+            try:
+                config = Config.get_instance()
+                idade = (config.get_now() - msg_time).total_seconds()
+            except Exception as e:
+                print(f"⚠️ Erro ao obter idade: {e}")
+                idade = (datetime.now() - msg_time).total_seconds()
             print(f"⏰ Idade da mensagem: {int(idade)}s ({int(idade/60)}min atrás)")
             
             print(f"🔍 Processando comando: {texto}")
@@ -906,7 +931,11 @@ on:
         # Salva o estado para próxima execução
         self._salvar_ultimo_update_id()
         
-        print(f"👋 Listener encerrado às {datetime.now().strftime('%H:%M:%S')}")
+        try:
+            config = Config.get_instance()
+            print(f"👋 Listener encerrado às {config.get_now().strftime('%H:%M:%S')}")
+        except Exception as e:
+            print(f"👋 Listener encerrado (erro ao obter hora: {e})")
 
 
 def main():

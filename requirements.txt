@@ -13,3 +13,4 @@ xlsxwriter
 psutil
 reportlab
 psycopg[binary]
+pytz

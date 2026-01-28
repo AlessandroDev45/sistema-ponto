@@ -5,7 +5,8 @@ import logging
 from pathlib import Path
 import time
 from dotenv import load_dotenv
-from datetime import datetime, time 
+from datetime import datetime, time, timezone, timedelta
+import pytz
 
 class ConfigError(Exception):
     pass
@@ -21,7 +22,18 @@ class Config:
 
     def __init__(self):
         if not Config._initialized:
-            self.logger = logging.getLogger('Config')
+            try:
+                self.logger = logging.getLogger('Config')
+                if not self.logger.handlers:
+                    # Configura logger básico se não houver handlers
+                    handler = logging.StreamHandler()
+                    handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+                    self.logger.addHandler(handler)
+                    self.logger.setLevel(logging.INFO)
+            except Exception as e:
+                print(f"Erro ao configurar logger: {e}")
+                self.logger = logging.getLogger('Config')
+            
             self._load_config()
             Config._initialized = True
 
@@ -44,6 +56,15 @@ class Config:
     def _validate_and_load_configs(self):
         """Valida e carrega todas as variáveis"""
         try:
+            # Configurações de fuso horário
+            self.TIMEZONE = os.getenv('TIMEZONE', 'America/Sao_Paulo')
+            try:
+                self.TZ_OBJ = pytz.timezone(self.TIMEZONE)
+            except pytz.exceptions.UnknownTimeZoneError:
+                self.logger.warning(f"Fuso horário '{self.TIMEZONE}' desconhecido, usando America/Sao_Paulo")
+                self.TIMEZONE = 'America/Sao_Paulo'
+                self.TZ_OBJ = pytz.timezone(self.TIMEZONE)
+            
             # Configurações financeiras
             self.SALARIO_BASE = self._get_float('SALARIO_BASE')
             
@@ -143,3 +164,7 @@ class Config:
         if cls._instance is None:
             cls._instance = Config()
         return cls._instance
+    
+    def get_now(self):
+        """Retorna o horário atual com timezone configurado"""
+        return datetime.now(self.TZ_OBJ)

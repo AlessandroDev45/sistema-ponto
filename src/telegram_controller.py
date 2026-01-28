@@ -12,7 +12,8 @@ import requests
 import logging
 from datetime import datetime, timedelta
 import json
-from config.config import Config 
+from config.config import Config
+from src.utils.timezone_helper import get_now
 
 # Ensure root path is added to sys.path
 project_root = str(Path(__file__).parent.parent)
@@ -158,7 +159,7 @@ class TelegramController:
                 return
                 
             msg_time = datetime.fromtimestamp(mensagem.get('date', 0))
-            if (datetime.now() - msg_time).total_seconds() > 30:
+            if (get_now() - msg_time).total_seconds() > 30:
                 return
 
             # Verifica confirmação de encerramento
@@ -241,7 +242,7 @@ class TelegramController:
 
         menu_text = (
             "<b>⏱️ SISTEMA DE PONTO</b>\n"
-            f"<i>Agora: {datetime.now().strftime('%H:%M')}</i>\n\n"
+            f"<i>Agora: {get_now().strftime('%H:%M')}</i>\n\n"
             
             "<b>🕒 Registrar:</b>\n"
             "/registrar - Bater ponto\n\n"
@@ -267,7 +268,11 @@ class TelegramController:
 
     def _obter_periodo_atual(self):
         """Retorna o período atual: manha, tarde ou noite"""
-        hora = datetime.now().hour
+        try:
+            hora = get_now().hour
+        except Exception as e:
+            self.logger.warning(f"Erro ao obter horario: {e}")
+            hora = datetime.now().hour
         if hora < 12:
             return 'manha', 'manhã'
         elif hora < 18:
@@ -278,7 +283,11 @@ class TelegramController:
     def _determinar_tipo_registro(self):
         """Determina se é entrada ou saída baseado nos registros do dia"""
         try:
-            hoje = datetime.now().date()
+            try:
+                hoje = get_now().date()
+            except Exception as e:
+                self.logger.warning(f"Erro ao obter horario: {e}")
+                hoje = datetime.now().date()
             registros = self.db.obter_registros_dia(hoje) if self.db else []
             
             # Conta entradas e saídas
@@ -299,8 +308,13 @@ class TelegramController:
                 self.enviar_mensagem("❌ Sistema não inicializado")
                 return
             
-            hoje = datetime.now().date()
-            agora = datetime.now()
+            try:
+                hoje = get_now().date()
+                agora = get_now()
+            except Exception as e:
+                self.logger.warning(f"Erro ao obter horario: {e}")
+                hoje = datetime.now().date()
+                agora = datetime.now()
             periodo_key, periodo_nome = self._obter_periodo_atual()
             tipo_registro = self._determinar_tipo_registro()
             
@@ -346,7 +360,7 @@ class TelegramController:
             return
             
             if resultado['sucesso']:
-                agora = datetime.now()
+                agora = get_now()
                 msg = f"✅ {tipo_registro.capitalize()} registrada às {agora.strftime('%H:%M')}"
                 
                 # Se for saída, mostra o total de horas do dia
@@ -388,8 +402,13 @@ class TelegramController:
     def mostrar_status_detalhado(self, args=None):
         """Mostra status detalhado do sistema e registros"""
         try:
-            config = Config.get_instance()
-            agora = datetime.now()
+            try:
+                config = Config.get_instance()
+                agora = get_now()
+            except Exception as e:
+                self.logger.warning(f"Erro ao obter config: {e}")
+                config = None
+                agora = datetime.now()
             hoje = agora.date()
 
             inicio_dia = datetime.combine(hoje, datetime.min.time())
@@ -403,10 +422,15 @@ class TelegramController:
                 f"Data: {hoje.strftime('%d/%m/%Y')}\n\n"
                 f"Estado: {'🟢 Ativo' if self.sistema_ativo else '⏸️ Pausado'}\n\n"
                 "<b>Horários Configurados:</b>\n"
-                f"• Entrada: {config.HORARIO_ENTRADA}\n"
-                f"• Saída: {config.HORARIO_SAIDA}\n\n"
-                "<b>Registros de Hoje:</b>\n"
             )
+            
+            if config:
+                msg += f"• Entrada: {config.HORARIO_ENTRADA}\n"
+                msg += f"• Saída: {config.HORARIO_SAIDA}\n\n"
+            else:
+                msg += "• Horários: Indisponíveis\n\n"
+            
+            msg += "<b>Registros de Hoje:</b>\n"
 
             if registros_hoje:
                 for reg in registros_hoje:
@@ -433,12 +457,15 @@ class TelegramController:
             hora_atual = agora.strftime('%H:%M')
             msg += "\n<b>Próximos Horários:</b>\n"
             # Ambos são strings em HH:MM, comparação é válida
-            if hora_atual < config.HORARIO_ENTRADA:  # type: ignore
-                msg += f"• Próximo registro: {config.HORARIO_ENTRADA} (Entrada)\n"
-            elif hora_atual < config.HORARIO_SAIDA:  # type: ignore
-                msg += f"• Próximo registro: {config.HORARIO_SAIDA} (Saída)\n"
+            if config:
+                if hora_atual < config.HORARIO_ENTRADA:  # type: ignore
+                    msg += f"• Próximo registro: {config.HORARIO_ENTRADA} (Entrada)\n"
+                elif hora_atual < config.HORARIO_SAIDA:  # type: ignore
+                    msg += f"• Próximo registro: {config.HORARIO_SAIDA} (Saída)\n"
+                else:
+                    msg += f"• Próximo registro: {config.HORARIO_ENTRADA} (Entrada amanhã)\n"
             else:
-                msg += f"• Próximo registro: {config.HORARIO_ENTRADA} (Entrada amanhã)\n"
+                msg += "• Horários próximos: Indisponíveis\n"
 
             self.enviar_mensagem(msg)
 
@@ -492,7 +519,7 @@ class TelegramController:
                 self.enviar_mensagem("❌ Período inválido. Use entre 1 e 90 dias.")
                 return
 
-            fim = datetime.now()
+            fim = get_now()
             inicio = fim - timedelta(days=dias)
 
             falhas = self.db.obter_falhas_periodo(inicio, fim)
@@ -602,7 +629,7 @@ class TelegramController:
                 self.enviar_mensagem("❌ Período inválido. Use entre 1 e 90 dias.")
                 return
 
-            fim = datetime.now()
+            fim = get_now()
             inicio = fim - timedelta(days=dias)
 
             horas = self.db.obter_horas_trabalhadas_periodo(inicio, fim)
@@ -664,7 +691,7 @@ class TelegramController:
         """Gera e envia relatório anual"""
         try:
             if not args:
-                ano = datetime.now().year
+                ano = get_now().year
             else:
                 ano = int(args[0])
 

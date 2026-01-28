@@ -25,6 +25,7 @@ from typing import Optional, Dict, Any
 
 # Imports locais
 from src.utils.logger import setup_logger
+from src.utils.timezone_helper import get_now
 from config.config import Config
 from src.telegram_controller import TelegramController
 from src.utils.database import Database
@@ -139,7 +140,11 @@ class SistemaPonto:
 
     def verificar_dia_util(self) -> tuple[bool, str]:
         """Verifica se é dia útil"""
-        hoje = datetime.now().date()
+        try:
+            hoje = get_now().date()
+        except Exception as e:
+            self.logger.warning(f"Erro ao obter horario: {e}")
+            hoje = datetime.now().date()
         
         if hoje.weekday() >= 5:
             return False, "Hoje é fim de semana"
@@ -151,7 +156,11 @@ class SistemaPonto:
 
     def _obter_periodo_atual(self):
         """Retorna o período atual: manha, tarde ou noite"""
-        hora = datetime.now().hour
+        try:
+            hora = get_now().hour
+        except Exception as e:
+            self.logger.warning(f"Erro ao obter horario: {e}")
+            hora = datetime.now().hour
         if hora < 12:
             return 'manha', 'manhã'
         elif hora < 18:

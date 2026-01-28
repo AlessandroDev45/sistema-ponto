@@ -14,6 +14,7 @@ sys.path.append(root_dir)
 
 from main import SistemaPonto
 from src.utils.database import Database
+from config.config import Config
 
 
 def verificar_sistema_pausado():
@@ -53,7 +54,12 @@ def verificar_comandos_telegram():
             return None, None
         
         # Processa mensagens das últimas 2 horas (janela de tempo para comandos)
-        agora = datetime.now()
+        try:
+            config = Config.get_instance()
+            agora = config.get_now()
+        except Exception as e:
+            print(f"⚠️ Erro ao obter config: {e}")
+            agora = datetime.now()
         limite = agora - timedelta(hours=2)
         
         ultimo_comando = None
@@ -117,7 +123,12 @@ def enviar_confirmacao_registro():
         if not token or not chat_id:
             return False
         
-        agora = datetime.now()
+        try:
+            config = Config.get_instance()
+            agora = config.get_now()
+        except Exception as e:
+            print(f"⚠️ Erro ao obter config: {e}")
+            agora = datetime.now()
         texto = f"⏰ <b>Registrar ponto agora às {agora.strftime('%H:%M:%S')}?</b>\n\n(Cron automático)"
         
         payload = {

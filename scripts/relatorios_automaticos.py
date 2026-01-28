@@ -19,6 +19,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 
+from config.config import Config
+
 
 class RelatoriosAutomaticos:
     def __init__(self):
@@ -76,7 +78,12 @@ class RelatoriosAutomaticos:
 
     def enviar_alerta_faltas(self):
         """Verifica e envia alerta de faltas do dia"""
-        hoje = datetime.now().date()
+        try:
+            config = Config.get_instance()
+            hoje = config.get_now().date()
+        except Exception as e:
+            print(f"⚠️ Erro ao obter config: {e}")
+            hoje = datetime.now().date()
         dia_semana = hoje.weekday()
         
         # Só verifica dias úteis (seg-sex)
@@ -133,7 +140,12 @@ class RelatoriosAutomaticos:
             print("Banco de dados não conectado")
             return
         
-        hoje = datetime.now().date()
+        try:
+            config = Config.get_instance()
+            hoje = config.get_now().date()
+        except Exception as e:
+            print(f"⚠️ Erro ao obter config: {e}")
+            hoje = datetime.now().date()
         inicio = hoje - timedelta(days=7)
         
         registros = self.db.obter_registros_periodo(inicio, hoje)
@@ -198,7 +210,12 @@ class RelatoriosAutomaticos:
 
     def gerar_relatorio_mensal(self):
         """Gera e envia relatório do mês anterior"""
-        hoje = datetime.now().date()
+        try:
+            config = Config.get_instance()
+            hoje = config.get_now().date()
+        except Exception as e:
+            print(f"⚠️ Erro ao obter config: {e}")
+            hoje = datetime.now().date()
         
         # Mês anterior
         if hoje.month == 1:
@@ -262,7 +279,12 @@ class RelatoriosAutomaticos:
             print("Banco de dados não conectado")
             return
         
-        ano = datetime.now().year - 1
+        try:
+            config = Config.get_instance()
+            ano = config.get_now().year - 1
+        except Exception as e:
+            print(f"⚠️ Erro ao obter config: {e}")
+            ano = datetime.now().year - 1
         inicio = datetime(ano, 1, 1).date()
         fim = datetime(ano, 12, 31).date()
         
