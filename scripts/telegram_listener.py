@@ -205,7 +205,7 @@ class TelegramListener:
             return f"❌ Erro ao obter horários: {e}"
 
     def alterar_horario(self, tipo, horario):
-        """Altera o horário de entrada ou saída"""
+        """Altera o horário de entrada ou saída e atualiza o cron no GitHub"""
         try:
             if not self.db:
                 return "❌ Banco de dados não disponível"
@@ -221,7 +221,9 @@ class TelegramListener:
             
             # Normaliza para HH:MM (com zero à esquerda)
             partes = horario.split(':')
-            horario_normalizado = f"{int(partes[0]):02d}:{partes[1]}"
+            hora = int(partes[0])
+            minuto = int(partes[1])
+            horario_normalizado = f"{hora:02d}:{minuto:02d}"
             
             if tipo == 'entrada':
                 chave = 'horario_entrada'
@@ -235,14 +237,106 @@ class TelegramListener:
             # Salva no banco
             self.db.registrar_configuracao(chave, horario_normalizado)
             
-            return (
+            # Tenta atualizar o cron no GitHub
+            cron_atualizado = self._atualizar_cron_github(tipo, hora, minuto)
+            
+            msg = (
                 f"✅ Horário de {nome} alterado!\n\n"
                 f"{emoji} Novo horário: <b>{horario_normalizado}</b>\n\n"
-                f"<i>O registro automático usará este horário.</i>\n"
-                f"⚠️ Lembre-se de atualizar o cron no GitHub se necessário."
             )
+            
+            if cron_atualizado:
+                msg += "✅ Cron do GitHub atualizado automaticamente!"
+            else:
+                msg += "⚠️ Não foi possível atualizar o cron no GitHub.\nAtualize manualmente se necessário."
+            
+            return msg
         except Exception as e:
             return f"❌ Erro ao alterar horário: {e}"
+
+    def _atualizar_cron_github(self, tipo, hora_brt, minuto):
+        """Atualiza o cron.yml no GitHub via API"""
+        try:
+            import base64
+            
+            github_token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN')
+            if not github_token:
+                print("Token do GitHub não configurado para atualizar cron")
+                return False
+            
+            repo = "AlessandroDev45/sistema-ponto"
+            file_path = ".github/workflows/cron.yml"
+            
+            # Converte BRT para UTC (BRT = UTC - 3)
+            hora_utc = (hora_brt + 3) % 24
+            
+            # Obtém o arquivo atual
+            url = f"https://api.github.com/repos/{repo}/contents/{file_path}"
+            headers = {
+                "Authorization": f"Bearer {github_token}",
+                "Accept": "application/vnd.github+json"
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code != 200:
+                print(f"Erro ao obter arquivo: {response.status_code}")
+                return False
+            
+            file_data = response.json()
+            sha = file_data['sha']
+            content = base64.b64decode(file_data['content']).decode('utf-8')
+            
+            # Obtém os dois horários atuais do banco
+            if self.db is None:
+                return False
+            entrada = self.db.obter_configuracao('horario_entrada') or '07:30'
+            saida = self.db.obter_configuracao('horario_saida') or '17:18'
+            
+            # Parseia os horários
+            ent_h, ent_m = map(int, entrada.split(':'))
+            sai_h, sai_m = map(int, saida.split(':'))
+            
+            # Converte para UTC
+            ent_h_utc = (ent_h + 3) % 24
+            sai_h_utc = (sai_h + 3) % 24
+            
+            # Novo conteúdo do cron
+            novo_cron = f'''name: Registrar ponto (cron)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Entrada: {entrada} BRT = {ent_h_utc:02d}:{ent_m:02d} UTC
+    - cron: "{ent_m} {ent_h_utc} * * 1-5"
+    # Saída: {saida} BRT = {sai_h_utc:02d}:{sai_m:02d} UTC
+    - cron: "{sai_m} {sai_h_utc} * * 1-5"
+'''
+            
+            # Obtém o resto do arquivo (a partir de "jobs:")
+            jobs_start = content.find('jobs:')
+            if jobs_start != -1:
+                novo_cron += "\n" + content[jobs_start:]
+            
+            # Faz o commit
+            update_data = {
+                "message": f"chore: update cron schedule - {tipo} {hora_brt:02d}:{minuto:02d} BRT",
+                "content": base64.b64encode(novo_cron.encode('utf-8')).decode('utf-8'),
+                "sha": sha,
+                "branch": "main"
+            }
+            
+            response = requests.put(url, headers=headers, json=update_data, timeout=10)
+            
+            if response.status_code in [200, 201]:
+                print(f"Cron atualizado: {tipo} = {hora_brt:02d}:{minuto:02d} BRT")
+                return True
+            else:
+                print(f"Erro ao atualizar cron: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"Erro ao atualizar cron no GitHub: {e}")
+            return False
 
     def mostrar_horas(self):
         """Mostra horas trabalhadas hoje"""

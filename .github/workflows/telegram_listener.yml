@@ -40,4 +40,5 @@ jobs:
           SALARIO_BASE: ${{ secrets.SALARIO_BASE }}
           HORARIO_ENTRADA: ${{ secrets.HORARIO_ENTRADA }}
           HORARIO_SAIDA: ${{ secrets.HORARIO_SAIDA }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: python scripts/telegram_listener.py
