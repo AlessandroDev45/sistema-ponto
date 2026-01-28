@@ -94,7 +94,7 @@ class TelegramController:
                 
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Erro ao enviar mensagem: {e}")
-            if hasattr(e, 'response') and hasattr(e.response, 'text'):
+            if hasattr(e, 'response') and e.response is not None and hasattr(e.response, 'text'):
                 self.logger.error(f"Response: {e.response.text}")
             return False
 
