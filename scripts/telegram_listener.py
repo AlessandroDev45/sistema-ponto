@@ -644,34 +644,27 @@ on:
         hora_formatada = agora.strftime('%H:%M')
         
         return (
-            "<b>═══════════════════════════════</b>\n"
-            "<b>⏱️  SISTEMA DE PONTO</b>\n"
-            "<b>═══════════════════════════════</b>\n\n"
+            "<b>⏱️ SISTEMA DE PONTO</b>\n"
+            f"<i>Agora: {hora_formatada}</i>\n\n"
             
-            f"🕐 <i>Agora: {hora_formatada}</i>\n\n"
+            "<b>🕒 Registrar:</b>\n"
+            "/registrar - Bater ponto\n\n"
             
-            "<b>🟢 AÇÕES RÁPIDAS:</b>\n"
-            "🕒 <code>/registrar</code> - Bater ponto\n"
-            "📊 <code>/status</code> - Status em tempo real\n"
-            "⏰ <code>/horarios</code> - Horários do dia\n\n"
+            "<b>📊 Consultas:</b>\n"
+            "/status - Status atual\n"
+            "/horas - Total de horas\n"
+            "/falhas - Problemas\n\n"
             
-            "<b>📊 INFORMAÇÕES:</b>\n"
-            "⏳ <code>/horas</code> - Total de horas\n"
-            "❌ <code>/falhas</code> - Problemas detectados\n"
-            "📄 <code>/relatorio</code> - Relatório mensal\n"
-            "📅 <code>/relatorio_anual</code> - Ano completo\n\n"
+            "<b>📄 Relatórios:</b>\n"
+            "/relatorio - Mês atual\n"
+            "/relatorio_anual - Ano completo\n\n"
             
-            "<b>⚙️  CONTROLE DO SISTEMA:</b>\n"
-            "⏸️  <code>/pausar</code> - Pausar registros\n"
-            "▶️  <code>/retomar</code> - Retomar registros\n\n"
-            
-            "<b>⚡ CONFIGURAÇÕES:</b>\n"
-            "<code>/entrada HH:MM</code> - Alterar entrada\n"
-            "<code>/saida HH:MM</code> - Alterar saída\n\n"
-            
-            "═══════════════════════════════\n"
-            "💡 <i>Dica: Responda com um comando</i>\n"
-            "💡 <i>ou use os botões abaixo</i>"
+            "<b>⚙️ Controles:</b>\n"
+            "/pausar - Pausar sistema\n"
+            "/retomar - Retomar sistema\n"
+            "/horarios - Ver horários\n"
+            "/entrada HH:MM - Mudar entrada\n"
+            "/saida HH:MM - Mudar saída"
         )
     
     def executar_registro(self, confirmado=False):
