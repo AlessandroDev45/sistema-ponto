@@ -640,19 +640,38 @@ on:
 
     def mostrar_menu(self):
         """Mostra menu de comandos"""
+        agora = datetime.now()
+        hora_formatada = agora.strftime('%H:%M')
+        
         return (
-            "<b>🔷 Menu Principal</b>\n\n"
-            "🕒 /registrar - Bater ponto\n"
-            "📊 /status - Status atual\n"
-            "⏰ /horas - Horas de hoje\n"
-            "📄 /relatorio - Relatório do mês\n"
-            "❌ /falhas - Ver falhas\n"
-            "⏸️ /pausar - Pausar sistema\n"
-            "▶️ /retomar - Retomar sistema\n"
-            "⏰ /horarios - Ver horários\n"
-            "/entrada HH:MM - Alterar entrada\n"
-            "/saida HH:MM - Alterar saída\n"
-            "❓ /ajuda - Ajuda completa"
+            "<b>═══════════════════════════════</b>\n"
+            "<b>⏱️  SISTEMA DE PONTO</b>\n"
+            "<b>═══════════════════════════════</b>\n\n"
+            
+            f"🕐 <i>Agora: {hora_formatada}</i>\n\n"
+            
+            "<b>🟢 AÇÕES RÁPIDAS:</b>\n"
+            "🕒 <code>/registrar</code> - Bater ponto\n"
+            "📊 <code>/status</code> - Status em tempo real\n"
+            "⏰ <code>/horarios</code> - Horários do dia\n\n"
+            
+            "<b>📊 INFORMAÇÕES:</b>\n"
+            "⏳ <code>/horas</code> - Total de horas\n"
+            "❌ <code>/falhas</code> - Problemas detectados\n"
+            "📄 <code>/relatorio</code> - Relatório mensal\n"
+            "📅 <code>/relatorio_anual</code> - Ano completo\n\n"
+            
+            "<b>⚙️  CONTROLE DO SISTEMA:</b>\n"
+            "⏸️  <code>/pausar</code> - Pausar registros\n"
+            "▶️  <code>/retomar</code> - Retomar registros\n\n"
+            
+            "<b>⚡ CONFIGURAÇÕES:</b>\n"
+            "<code>/entrada HH:MM</code> - Alterar entrada\n"
+            "<code>/saida HH:MM</code> - Alterar saída\n\n"
+            
+            "═══════════════════════════════\n"
+            "💡 <i>Dica: Responda com um comando</i>\n"
+            "💡 <i>ou use os botões abaixo</i>"
         )
     
     def executar_registro(self, confirmado=False):
