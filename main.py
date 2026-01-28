@@ -673,7 +673,7 @@ def main():
         if sistema:
             try:
                 sistema.encerrar_sistema()
-            except:
+            except Exception:
                 pass
         sys.exit(0)
 
@@ -703,5 +703,5 @@ if __name__ == "__main__":
         try:
             if os.path.exists(pid_file):
                 os.remove(pid_file)
-        except:
+        except Exception:
             pass

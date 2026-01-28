@@ -482,7 +482,7 @@ on:
                     try:
                         dt = datetime.strptime(data.split('.')[0], '%Y-%m-%d %H:%M:%S')
                         data = dt.strftime('%d/%m %H:%M')
-                    except:
+                    except Exception:
                         pass
                 erro = f[3] if len(f) > 3 else "Erro desconhecido"
                 msg += f"• {data}: {str(erro)[:40]}...\n"
@@ -563,7 +563,7 @@ on:
                             h = int(partes[0])
                             m = int(partes[1].replace('min', ''))
                             total_horas += h + m/60
-                except:
+                except Exception:
                     pass
             
             msg = f"<b>📅 Relatório Anual - {hoje.year}</b>\n\n"
@@ -758,7 +758,7 @@ on:
         if self.sistema:
             try:
                 self.sistema.encerrar_sistema()
-            except:
+            except Exception:
                 pass
         
         # Salva o estado para próxima execução
