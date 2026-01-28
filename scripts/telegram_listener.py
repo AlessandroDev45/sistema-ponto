@@ -138,7 +138,8 @@ class TelegramListener:
         elif texto in ['/relatorio', 'relatorio', '📄 relatório mensal']:
             return self.gerar_relatorio_mensal()
         
-        elif texto in ['/menu', 'menu', '🔷 menu principal']:
+        elif texto in ['/relatorio_anual', 'relatorio_anual', '📅 relatório anual']:
+            return self.gerar_relatorio_anual()
             return self.mostrar_menu()
         
         elif texto in ['/horarios', 'horarios', '⏰ horários']:
@@ -472,6 +473,57 @@ on:
             return msg
         except Exception as e:
             return f"❌ Erro ao gerar relatório: {e}"
+
+    def gerar_relatorio_anual(self):
+        """Gera resumo do ano atual"""
+        try:
+            if not self.db:
+                return "❌ Banco de dados não disponível"
+            
+            hoje = datetime.now()
+            inicio_ano = hoje.replace(month=1, day=1)
+            
+            # Busca registros do ano
+            registros = self.db.obter_registros_periodo(inicio_ano, hoje)
+            
+            if not registros:
+                return f"📅 Nenhum registro em {hoje.year}"
+            
+            # Conta dias trabalhados
+            dias = set()
+            total_horas = 0
+            
+            for reg in registros:
+                data_str = reg[1]
+                if isinstance(data_str, str):
+                    dt = datetime.strptime(data_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
+                    dt = data_str
+                dias.add(dt.date())
+            
+            # Calcula total de horas (aproximado)
+            for dia in dias:
+                try:
+                    total = self.db.calcular_total_horas_dia(dia)
+                    if total and total.get('registros_completos'):
+                        # Parse "10h30min" para horas decimais
+                        horas_str = total['total_formatado']
+                        partes = horas_str.split('h')
+                        if len(partes) >= 2:
+                            h = int(partes[0])
+                            m = int(partes[1].replace('min', ''))
+                            total_horas += h + m/60
+                except:
+                    pass
+            
+            msg = f"<b>📅 Relatório Anual - {hoje.year}</b>\n\n"
+            msg += f"📆 Dias trabalhados: {len(dias)}\n"
+            msg += f"📝 Total de registros: {len(registros)}\n"
+            msg += f"⏰ Horas aproximadas: {int(total_horas)}h\n"
+            
+            return msg
+        except Exception as e:
+            return f"❌ Erro ao gerar relatório anual: {e}"
 
     def mostrar_menu(self):
         """Mostra menu de comandos"""
