@@ -150,10 +150,13 @@ class TelegramController:
         Processa mensagens recebidas do Telegram.
         """
         try:
-            if 'text' not in mensagem:
+            if mensagem is None or 'text' not in mensagem:
                 return
 
-            texto = mensagem['text']
+            texto = mensagem.get('text', '')
+            if not texto:
+                return
+                
             msg_time = datetime.fromtimestamp(mensagem.get('date', 0))
             if (datetime.now() - msg_time).total_seconds() > 30:
                 return
@@ -607,9 +610,9 @@ class TelegramController:
 
             msg = f"⏰ *Horas Trabalhadas - Últimos {dias} dias*\n\n"
             total_horas = {
-                'normais': 0, 'he_60': 0, 'he_65': 0,
-                'he_75': 0, 'he_100': 0, 'he_150': 0,
-                'noturnas': 0
+                'normais': 0.0, 'he_60': 0.0, 'he_65': 0.0,
+                'he_75': 0.0, 'he_100': 0.0, 'he_150': 0.0,
+                'noturnas': 0.0
             }
 
             for h in horas:
