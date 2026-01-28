@@ -234,9 +234,11 @@ class TelegramListener:
         elif texto in ['/registrar', 'registrar', '🕒 registrar ponto']:
             # Pede confirmação via botão inline
             agora = datetime.now()
-            mensagem = f"⚠️ <b>Registrar ponto agora às {agora.strftime('%H:%M:%S')}?</b>"
-            self.enviar_mensagem_com_botoes(mensagem)
-            return None  # Não retorna resposta via texto, usa botões
+            
+            # BLOQUEIO TEMPORÁRIO: Não permite registro agora
+            print("⛔ Registro BLOQUEADO - não permitido neste momento")
+            self.enviar_mensagem("⛔ <b>Registro bloqueado</b>\n\nNão é permitido registrar ponto agora.\nTente mais tarde.")
+            return None  # Não envia botões
         
         elif texto in ['/horas', 'horas', '⏰ horas trabalhadas']:
             return self.mostrar_horas()
