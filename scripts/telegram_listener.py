@@ -188,9 +188,11 @@ class TelegramListener:
         
         elif texto in ['/relatorio_anual', 'relatorio_anual', '📅 relatório anual']:
             return self.gerar_relatorio_anual()
+        
+        elif texto in ['/menu', 'menu', '🔷 menu principal']:
             return self.mostrar_menu()
         
-        elif texto in ['/horarios', 'horarios', '⏰ horários']:
+        elif texto in ['/horarios', 'horarios', '⏰ horários', '/horario', 'horario']:
             return self.mostrar_horarios()
         
         elif texto.startswith('/entrada ') or texto.startswith('entrada '):
