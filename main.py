@@ -350,39 +350,9 @@ class SistemaPonto:
                 
     def processar_comandos_telegram(self):
         """Processa comandos recebidos via Telegram"""
-        try:
-            updates = self.telegram.get_updates()
-            for update in updates:
-                try:
-                    if "message" in update:
-                        mensagem = update["message"]
-                        comando = mensagem.get("text", "")
-                        chat_id = mensagem["chat"]["id"]
-                        
-                        self.logger.info(f"Comando recebido: {comando}")
-                        
-                        # Verifica se é um chat autorizado
-                        if str(chat_id) != self.config.TELEGRAM_CHAT_ID:
-                            self.logger.warning(f"Tentativa de acesso não autorizado: {chat_id}")
-                            continue
-                        
-                        # Processa comando
-                        if comando == "📊 Status":
-                            status = self.verificar_status()
-                            self.telegram.enviar_mensagem(status)
-                            
-                        elif comando == "🕒 Registrar Ponto":
-                            self.registrar_ponto_automatico()
-                            
-                        elif comando.startswith("/"):
-                            self.processar_comando_telegram(comando)
-                            
-                except Exception as e:
-                    self.logger.error(f"Erro ao processar mensagem: {e}")
-                    continue
-                    
-        except Exception as e:
-            self.logger.error(f"Erro ao processar comandos Telegram: {e}")
+        # ⛔ DESABILITADO - Usar scripts/telegram_listener.py em vez disso
+        self.logger.info("⛔ telegram_controller DESABILITADO - use telegram_listener.py")
+        return
 
     def processar_comando_telegram(self, comando: str):
         """Processa comandos específicos do Telegram"""
