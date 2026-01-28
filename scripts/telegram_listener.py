@@ -528,6 +528,31 @@ on:
         except Exception as e:
             return f"❌ Erro ao registrar: {str(e)}"
     
+    def _deduplica_comandos(self, updates):
+        """
+        Remove comandos repetidos consecutivos.
+        Ex: [/status, /status, /status, /menu, /status] → [/status, /menu, /status]
+        Mas permite o mesmo comando aparecer novamente após um diferente.
+        """
+        if not updates:
+            return []
+        
+        deduplic = []
+        ultimo_comando = None
+        
+        for update in updates:
+            message = update.get('message', {})
+            texto = message.get('text', '').lower().strip()
+            
+            # Se é um comando diferente do anterior, adiciona
+            if texto != ultimo_comando:
+                deduplic.append(update)
+                ultimo_comando = texto
+            else:
+                print(f"⏭️ Pulando comando duplicado: {texto}")
+        
+        return deduplic
+    
     def executar(self):
         """Loop principal - verifica comandos e mantém sessão ativa se necessário"""
         print(f"🤖 Telegram Listener iniciado às {datetime.now().strftime('%H:%M:%S')}")
@@ -543,7 +568,11 @@ on:
         updates = self.get_updates()
         print(f"📬 {len(updates)} updates recebidos")
         
-        for update in updates:
+        # Deduplica comandos repetidos consecutivos
+        comandos_processados = self._deduplica_comandos(updates)
+        print(f"🔄 Após deduplicação: {len(comandos_processados)} comandos únicos")
+        
+        for update in comandos_processados:
             message = update.get('message', {})
             msg_chat_id = str(message.get('chat', {}).get('id', ''))
             texto = message.get('text', '')
@@ -595,7 +624,11 @@ on:
                 updates = self.get_updates()
                 print(f"📬 {len(updates)} updates")
                 
-                for update in updates:
+                # Deduplica também na sessão ativa
+                comandos_processados = self._deduplica_comandos(updates)
+                print(f"🔄 Após deduplicação: {len(comandos_processados)} únicos")
+                
+                for update in comandos_processados:
                     message = update.get('message', {})
                     msg_chat_id = str(message.get('chat', {}).get('id', ''))
                     texto = message.get('text', '')
