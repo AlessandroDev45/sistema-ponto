@@ -237,27 +237,24 @@ class TelegramController:
         ]
 
         menu_text = (
-            "<b>🤖 Sistema de Registro de Ponto</b>\n\n"
-            "<b>Comandos Disponíveis:</b>\n\n"
-            "📍 <b>Registro e Status:</b>\n"
-            "• /registrar - Registrar ponto manual\n"
-            "• /status - Ver status detalhado\n\n"
-            "📊 <b>Relatórios:</b>\n"
-            "• /relatorio mes ano - Relatório mensal\n"
-            "• /relatorio_anual [ano] - Relatório anual\n\n"
-            "⏰ <b>Consultas:</b>\n"
-            "• /horas [dias] - Ver horas trabalhadas\n"
-            "• /falhas [dias] - Ver falhas do sistema\n\n"
-            "⚙️ <b>Sistema:</b>\n"
-            "• /configuracoes - Ver configurações\n"
-            "• /ajuda - Ver ajuda detalhada\n"
-            "• /menu - Mostrar este menu\n"
-            "• /pausar - Pausar sistema\n"
-            "• /retomar - Retomar sistema\n\n"
-            "💡 <b>Dicas:</b>\n"
-            "• Use os botões para acesso rápido\n"
-            "• Para relatórios mensais: /relatorio 1 2024\n"
-            "• Para consultas: /horas 7 ou /falhas 7"
+            "<b>⏱️ SISTEMA DE PONTO</b>\n\n"
+            
+            "<b>📍 Principais:</b>\n"
+            "🕒 /registrar - Registrar ponto agora\n"
+            "📊 /status - Ver status do dia\n"
+            "⏰ /horarios - Horários configurados\n\n"
+            
+            "<b>📈 Consultas:</b>\n"
+            "⏳ /horas - Horas trabalhadas\n"
+            "❌ /falhas - Falhas do sistema\n"
+            "📄 /relatorio - Relatório mensal\n"
+            "📅 /relatorio_anual - Relatório anual\n\n"
+            
+            "<b>⚙️ Controle:</b>\n"
+            "⏸️ /pausar - Pausar automação\n"
+            "▶️ /retomar - Retomar automação\n\n"
+            
+            "💡 Dica: Use os botões abaixo para acesso rápido!"
         )
 
         self.enviar_mensagem(menu_text, keyboard)
