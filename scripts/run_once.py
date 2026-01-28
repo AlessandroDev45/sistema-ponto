@@ -108,6 +108,46 @@ def enviar_mensagem_telegram(texto):
         pass
 
 
+def enviar_confirmacao_registro():
+    """Envia mensagem com botões de confirmação para registro via cron"""
+    try:
+        token = os.environ.get('TELEGRAM_TOKEN')
+        chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+        
+        if not token or not chat_id:
+            return False
+        
+        agora = datetime.now()
+        texto = f"⏰ <b>Registrar ponto agora às {agora.strftime('%H:%M:%S')}?</b>\n\n(Cron automático)"
+        
+        payload = {
+            'chat_id': chat_id,
+            'text': texto,
+            'parse_mode': 'HTML',
+            'reply_markup': {
+                'inline_keyboard': [
+                    [
+                        {'text': '✅ Confirmar', 'callback_data': 'confirmar_registrar_cron'},
+                        {'text': '❌ Cancelar', 'callback_data': 'cancelar_registrar_cron'}
+                    ]
+                ]
+            }
+        }
+        
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        response = requests.post(url, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print("✅ Confirmação de registro enviada ao Telegram")
+            return True
+        else:
+            print(f"❌ Erro ao enviar confirmação: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"⚠️ Erro ao enviar confirmação: {e}")
+        return False
+
+
 def main():
     load_dotenv(override=True)
     
@@ -149,6 +189,18 @@ def main():
         print("Para retomar, envie /retomar no Telegram antes do próximo horário")
         enviar_mensagem_telegram("⏸️ Registro ignorado - sistema pausado\nEnvie /retomar para reativar")
         return
+    
+    # ✅ NOVO: Envia confirmação via Telegram antes de registrar
+    print("📱 Enviando confirmação de registro para Telegram...")
+    confirmacao_enviada = enviar_confirmacao_registro()
+    
+    if confirmacao_enviada:
+        print("⏳ Aguardando confirmação do usuário via Telegram...")
+        print("   (O listener processará o callback quando user clicar no botão)")
+        # Não registra agora - aguarda que o listener processe o callback
+        return
+    else:
+        print("⚠️ Não foi possível enviar confirmação - prosseguindo com registro automático")
     
     sistema = None
     try:

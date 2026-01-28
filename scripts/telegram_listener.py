@@ -697,8 +697,41 @@ on:
             return self.executar_registro(confirmado=True)
         elif callback_data == 'cancelar_registrar':
             return "❌ Registro cancelado."
+        elif callback_data == 'confirmar_registrar_cron':
+            # Cron pedindo confirmação
+            return self._executar_registro_cron()
+        elif callback_data == 'cancelar_registrar_cron':
+            return "❌ Registro via cron cancelado."
         else:
             return f"❌ Ação desconhecida: {callback_data}"
+    
+    def _executar_registro_cron(self):
+        """Executa registro de ponto confirmado pelo cron"""
+        try:
+            from main import SistemaPonto
+            
+            if not self.sistema:
+                self.sistema = SistemaPonto()
+            
+            resultado = self.sistema.automacao.registrar_ponto(force=True)
+            
+            if resultado['sucesso']:
+                agora = datetime.now()
+                msg = f"✅ Ponto registrado (cron confirmado) às {agora.strftime('%H:%M')}"
+                
+                # Calcula total se for saída
+                if self.db:
+                    hoje = datetime.now().date()
+                    total = self.db.calcular_total_horas_dia(hoje)
+                    if total and total['registros_completos']:
+                        msg += f"\n\n📊 Total do dia: {total['total_formatado']}"
+                
+                return msg
+            else:
+                return f"❌ Falha: {resultado['mensagem']}"
+                
+        except Exception as e:
+            return f"❌ Erro ao registrar (cron): {str(e)}"
     
     def _deduplica_comandos(self, updates):
         """
