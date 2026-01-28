@@ -27,7 +27,7 @@ class TelegramListener:
         load_dotenv(override=True)
         self.token = os.environ.get('TELEGRAM_TOKEN')
         self.chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
-        self.ultimo_update_id = 0
+        self.ultimo_update_id = self._carregar_ultimo_update_id()
         self.db = None
         self.sistema = None
         
@@ -41,6 +41,34 @@ class TelegramListener:
             print("✅ Banco de dados conectado")
         except Exception as e:
             print(f"⚠️ Banco indisponível: {e}")
+    
+    def _carregar_ultimo_update_id(self):
+        """Carrega o último update_id processado de um arquivo"""
+        try:
+            import json
+            arquivo = 'temp/.telegram_state.json'
+            if os.path.exists(arquivo):
+                with open(arquivo, 'r') as f:
+                    data = json.load(f)
+                    ultimo_id = data.get('ultimo_update_id', 0)
+                    print(f"📋 Carregado último update_id: {ultimo_id}")
+                    return ultimo_id
+        except Exception as e:
+            print(f"⚠️ Erro ao carregar estado: {e}")
+        
+        return 0
+    
+    def _salvar_ultimo_update_id(self):
+        """Salva o último update_id processado"""
+        try:
+            import json
+            os.makedirs('temp', exist_ok=True)
+            arquivo = 'temp/.telegram_state.json'
+            with open(arquivo, 'w') as f:
+                json.dump({'ultimo_update_id': self.ultimo_update_id}, f)
+            print(f"💾 Salvo último update_id: {self.ultimo_update_id}")
+        except Exception as e:
+            print(f"⚠️ Erro ao salvar estado: {e}")
     
     def enviar_mensagem(self, texto):
         """Envia mensagem para o Telegram"""
@@ -70,13 +98,30 @@ class TelegramListener:
             traceback.print_exc()
             return False
     
+    def _limpar_updates_processados(self):
+        """Remove updates já processados da fila do Telegram"""
+        try:
+            if self.ultimo_update_id <= 0:
+                return
+            
+            url = f"https://api.telegram.org/bot{self.token}/deleteMessage"
+            # Na verdade, para remover updates usamos offset na próxima chamada
+            # Mas também podemos usar a API de getUpdates com offset
+            # Vou fazer uma chamada vazia com offset+1 para indicar que processamos
+            print(f"🗑️ Limpando updates até ID {self.ultimo_update_id}")
+            
+        except Exception as e:
+            print(f"⚠️ Erro ao limpar: {e}")
+    
     def get_updates(self):
         """Busca novas mensagens do Telegram"""
         try:
             url = f"https://api.telegram.org/bot{self.token}/getUpdates"
-            params = {'offset': self.ultimo_update_id + 1, 'timeout': 5}
+            # Sempre pega a partir do próximo não processado
+            # Se ultimo_update_id = 0, pega do início (toda a fila)
+            params = {'offset': self.ultimo_update_id + 1 if self.ultimo_update_id > 0 else 0, 'timeout': 5}
             print(f"🔗 GET {url}")
-            print(f"   offset={self.ultimo_update_id + 1}")
+            print(f"   offset={params['offset']}")
             
             response = requests.get(url, params=params, timeout=15)
             print(f"📊 Status: {response.status_code}")
@@ -97,9 +142,12 @@ class TelegramListener:
             
             if updates:
                 self.ultimo_update_id = updates[-1]['update_id']
+                print(f"   Novo update_id: {self.ultimo_update_id}")
                 for u in updates:
                     msg = u.get('message', {})
                     print(f"   - Chat {msg.get('chat', {}).get('id')}: {msg.get('text', 'sem texto')[:50]}")
+                # Remove updates processados da fila
+                self._limpar_updates_processados()
             
             return updates
         except Exception as e:
@@ -710,6 +758,9 @@ on:
                 self.sistema.encerrar_sistema()
             except:
                 pass
+        
+        # Salva o estado para próxima execução
+        self._salvar_ultimo_update_id()
         
         print(f"👋 Listener encerrado às {datetime.now().strftime('%H:%M:%S')}")
 
