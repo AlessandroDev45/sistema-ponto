@@ -237,24 +237,34 @@ class TelegramController:
         ]
 
         menu_text = (
-            "<b>⏱️ SISTEMA DE PONTO</b>\n\n"
+            "<b>═══════════════════════════════</b>\n"
+            "<b>⏱️  SISTEMA DE PONTO</b>\n"
+            "<b>═══════════════════════════════</b>\n\n"
             
-            "<b>📍 Principais:</b>\n"
-            "🕒 /registrar - Registrar ponto agora\n"
-            "📊 /status - Ver status do dia\n"
-            "⏰ /horarios - Horários configurados\n\n"
+            f"🕐 <i>Agora: {datetime.now().strftime('%H:%M')}</i>\n\n"
             
-            "<b>📈 Consultas:</b>\n"
-            "⏳ /horas - Horas trabalhadas\n"
-            "❌ /falhas - Falhas do sistema\n"
-            "📄 /relatorio - Relatório mensal\n"
-            "📅 /relatorio_anual - Relatório anual\n\n"
+            "<b>🟢 AÇÕES RÁPIDAS:</b>\n"
+            "🕒 <code>/registrar</code> - Bater ponto\n"
+            "📊 <code>/status</code> - Status em tempo real\n"
+            "⏰ <code>/horarios</code> - Horários do dia\n\n"
             
-            "<b>⚙️ Controle:</b>\n"
-            "⏸️ /pausar - Pausar automação\n"
-            "▶️ /retomar - Retomar automação\n\n"
+            "<b>📊 INFORMAÇÕES:</b>\n"
+            "⏳ <code>/horas</code> - Total de horas\n"
+            "❌ <code>/falhas</code> - Problemas detectados\n"
+            "📄 <code>/relatorio</code> - Relatório mensal\n"
+            "📅 <code>/relatorio_anual</code> - Ano completo\n\n"
             
-            "💡 Dica: Use os botões abaixo para acesso rápido!"
+            "<b>⚙️  CONTROLE DO SISTEMA:</b>\n"
+            "⏸️  <code>/pausar</code> - Pausar registros\n"
+            "▶️  <code>/retomar</code> - Retomar registros\n\n"
+            
+            "<b>⚡ CONFIGURAÇÕES:</b>\n"
+            "<code>/entrada HH:MM</code> - Alterar entrada\n"
+            "<code>/saida HH:MM</code> - Alterar saída\n\n"
+            
+            "═══════════════════════════════\n"
+            "💡 <i>Dica: Responda com um comando</i>\n"
+            "💡 <i>ou use os botões abaixo</i>"
         )
 
         self.enviar_mensagem(menu_text, keyboard)
