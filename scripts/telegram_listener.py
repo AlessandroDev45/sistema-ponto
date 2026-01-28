@@ -46,14 +46,28 @@ class TelegramListener:
         """Envia mensagem para o Telegram"""
         try:
             url = f"https://api.telegram.org/bot{self.token}/sendMessage"
-            response = requests.post(url, json={
+            payload = {
                 'chat_id': self.chat_id,
                 'text': texto,
                 'parse_mode': 'HTML'
-            }, timeout=10)
-            return response.status_code == 200
+            }
+            print(f"📤 POST {url}")
+            print(f"   chat_id: {self.chat_id}")
+            print(f"   text: {texto[:50]}...")
+            
+            response = requests.post(url, json=payload, timeout=10)
+            print(f"📊 Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                print(f"✅ Mensagem enviada")
+                return True
+            else:
+                print(f"❌ Erro: {response.status_code} - {response.text[:100]}")
+                return False
         except Exception as e:
-            print(f"Erro ao enviar mensagem: {e}")
+            print(f"❌ Erro ao enviar mensagem: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def get_updates(self):
@@ -61,22 +75,37 @@ class TelegramListener:
         try:
             url = f"https://api.telegram.org/bot{self.token}/getUpdates"
             params = {'offset': self.ultimo_update_id + 1, 'timeout': 5}
+            print(f"🔗 GET {url}")
+            print(f"   offset={self.ultimo_update_id + 1}")
+            
             response = requests.get(url, params=params, timeout=15)
+            print(f"📊 Status: {response.status_code}")
             
             if response.status_code != 200:
+                print(f"❌ HTTP Error: {response.status_code}")
                 return []
             
             data = response.json()
+            print(f"✅ JSON ok: {data.get('ok')}")
+            
             if not data.get('ok'):
+                print(f"❌ API Error: {data.get('description', 'desconhecido')}")
                 return []
             
             updates = data.get('result', [])
+            print(f"📬 {len(updates)} updates")
+            
             if updates:
                 self.ultimo_update_id = updates[-1]['update_id']
+                for u in updates:
+                    msg = u.get('message', {})
+                    print(f"   - Chat {msg.get('chat', {}).get('id')}: {msg.get('text', 'sem texto')[:50]}")
             
             return updates
         except Exception as e:
-            print(f"Erro ao buscar updates: {e}")
+            print(f"❌ Erro ao buscar updates: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     def processar_comando(self, texto):
@@ -149,24 +178,35 @@ class TelegramListener:
         try:
             pausado = False
             if self.db:
-                estado = self.db.obter_configuracao('sistema_pausado')
-                pausado = estado == 'true'
+                try:
+                    estado = self.db.obter_configuracao('sistema_pausado')
+                    pausado = estado == 'true'
+                except Exception as e:
+                    print(f"⚠️ Erro ao verificar pausa: {e}")
             
             hoje = datetime.now().date()
             registros_hoje = []
             total_horas = None
             
             if self.db:
-                registros = self.db.obter_registros_dia(hoje)
-                for reg in registros:
-                    data_hora_str = reg[1]
-                    if isinstance(data_hora_str, str):
-                        dt = datetime.strptime(data_hora_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                    else:
-                        dt = data_hora_str
-                    registros_hoje.append(f"  • {dt.strftime('%H:%M')} - {reg[2]}")
-                
-                total_horas = self.db.calcular_total_horas_dia(hoje)
+                try:
+                    registros = self.db.obter_registros_dia(hoje)
+                    print(f"📋 {len(registros) if registros else 0} registros encontrados para {hoje}")
+                    
+                    if registros:
+                        for reg in registros:
+                            data_hora_str = reg[1]
+                            if isinstance(data_hora_str, str):
+                                dt = datetime.strptime(data_hora_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                            else:
+                                dt = data_hora_str
+                            registros_hoje.append(f"  • {dt.strftime('%H:%M')} - {reg[2]}")
+                    
+                    total_horas = self.db.calcular_total_horas_dia(hoje)
+                except Exception as e:
+                    print(f"⚠️ Erro ao buscar registros: {e}")
+            else:
+                print("⚠️ Banco de dados não disponível para obter registros")
             
             status = "🔴 Pausado" if pausado else "🟢 Ativo"
             msg = f"<b>📊 Status do Sistema</b>\n\nEstado: {status}\n\n"
@@ -181,6 +221,7 @@ class TelegramListener:
             
             return msg
         except Exception as e:
+            print(f"❌ Erro ao obter status: {e}")
             return f"❌ Erro ao obter status: {e}"
 
     def mostrar_horarios(self):
@@ -491,45 +532,71 @@ on:
         """Loop principal - verifica comandos e mantém sessão ativa se necessário"""
         print(f"🤖 Telegram Listener iniciado às {datetime.now().strftime('%H:%M:%S')}")
         print(f"⏱️ Sessão máxima: {TEMPO_SESSAO // 60} minutos")
+        print(f"📱 Chat ID: {self.chat_id}")
         
         inicio = time.time()
         sessao_ativa = False
         ultimo_comando = None
         
         # Primeira verificação
+        print("🔄 Buscando updates do Telegram...")
         updates = self.get_updates()
+        print(f"📬 {len(updates)} updates recebidos")
         
         for update in updates:
             message = update.get('message', {})
             msg_chat_id = str(message.get('chat', {}).get('id', ''))
             texto = message.get('text', '')
             
+            print(f"📨 Mensagem de {msg_chat_id}: {texto}")
+            
             if msg_chat_id != self.chat_id:
+                print(f"⚠️ Chat ID não corresponde. Esperado: {self.chat_id}, Recebido: {msg_chat_id}")
                 continue
             
-            # Verifica se mensagem é recente (últimos 5 minutos)
+            # Verifica se mensagem é recente (últimos 10 minutos)
             msg_time = datetime.fromtimestamp(message.get('date', 0))
-            if (datetime.now() - msg_time).total_seconds() > 300:
+            idade = (datetime.now() - msg_time).total_seconds()
+            print(f"⏰ Idade da mensagem: {idade:.0f}s")
+            
+            if idade > 600:  # 10 minutos em vez de 5
+                print(f"⚠️ Mensagem muito antiga, ignorando")
                 continue
             
-            print(f"📨 Comando recebido: {texto}")
+            print(f"🔍 Processando comando: {texto}")
             resposta = self.processar_comando(texto)
             
             if resposta:
-                self.enviar_mensagem(resposta)
-                sessao_ativa = True
-                ultimo_comando = time.time()
-                print(f"✅ Resposta enviada")
+                print(f"📤 Enviando resposta...")
+                enviado = self.enviar_mensagem(resposta)
+                if enviado:
+                    sessao_ativa = True
+                    ultimo_comando = time.time()
+                    print(f"✅ Resposta enviada com sucesso")
+                else:
+                    print(f"❌ Falha ao enviar resposta")
+            else:
+                print(f"⚠️ Nenhuma resposta para este comando")
         
         # Se houve comando, mantém sessão ativa por 5 minutos
         if sessao_ativa:
+            print("🟢 Ativando sessão ativa...")
             self.enviar_mensagem("🟢 Sessão ativa por 5 minutos. Envie comandos!")
             print("🔄 Sessão ativa - aguardando mais comandos...")
             
             while (time.time() - inicio) < TEMPO_SESSAO:
                 time.sleep(INTERVALO_POLLING)
                 
+                tempo_passado = int(time.time() - inicio)
+                
+                # Mostra tempo restante a cada 60 segundos
+                if tempo_passado % 60 == 0 and tempo_passado > 0:
+                    restante = (TEMPO_SESSAO - tempo_passado) // 60
+                    print(f"⏱️ {restante} minuto(s) restantes na sessão")
+                
+                print(f"🔄 Polling ({tempo_passado}s)...")
                 updates = self.get_updates()
+                print(f"📬 {len(updates)} updates")
                 
                 for update in updates:
                     message = update.get('message', {})
@@ -539,20 +606,18 @@ on:
                     if msg_chat_id != self.chat_id:
                         continue
                     
-                    print(f"📨 Comando: {texto}")
+                    print(f"📨 Comando durante sessão: {texto}")
                     resposta = self.processar_comando(texto)
                     
                     if resposta:
-                        self.enviar_mensagem(resposta)
-                        ultimo_comando = time.time()
-                        print(f"✅ Resposta enviada")
-                
-                # Mostra tempo restante a cada minuto
-                tempo_passado = int(time.time() - inicio)
-                if tempo_passado % 60 == 0 and tempo_passado > 0:
-                    restante = (TEMPO_SESSAO - tempo_passado) // 60
-                    print(f"⏱️ {restante} minutos restantes")
+                        enviado = self.enviar_mensagem(resposta)
+                        if enviado:
+                            ultimo_comando = time.time()
+                            print(f"✅ Resposta enviada")
+                        else:
+                            print(f"❌ Falha ao enviar")
             
+            print("⏱️ Sessão expirou")
             self.enviar_mensagem("🔴 Sessão encerrada. Envie um comando para reativar.")
         else:
             print("💤 Nenhum comando recente - encerrando")
