@@ -30,6 +30,8 @@ class TelegramListener:
         self.ultimo_update_id = self._carregar_ultimo_update_id()
         self.db = None
         self.sistema = None
+        self.acao_pendente = None  # Ação aguardando confirmação: 'registrar', etc.
+        self.tempo_acao_pendente = None  # Timestamp da ação pendente
         
         if not self.token or not self.chat_id:
             raise ValueError("TELEGRAM_TOKEN e TELEGRAM_CHAT_ID são obrigatórios")
@@ -97,7 +99,62 @@ class TelegramListener:
             import traceback
             traceback.print_exc()
             return False
+
+    def enviar_mensagem_com_botoes(self, texto, callback_sim='confirmar_registrar', callback_nao='cancelar_registrar'):
+        """Envia mensagem com botões inline para confirmação"""
+        try:
+            url = f"https://api.telegram.org/bot{self.token}/sendMessage"
+            payload = {
+                'chat_id': self.chat_id,
+                'text': texto,
+                'parse_mode': 'HTML',
+                'reply_markup': {
+                    'inline_keyboard': [
+                        [
+                            {'text': '✅ Sim', 'callback_data': callback_sim},
+                            {'text': '❌ Não', 'callback_data': callback_nao}
+                        ]
+                    ]
+                }
+            }
+            print(f"📤 POST {url} (com botões)")
+            print(f"   chat_id: {self.chat_id}")
+            print(f"   text: {texto[:50]}...")
+            
+            response = requests.post(url, json=payload, timeout=10)
+            print(f"📊 Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                print(f"✅ Mensagem com botões enviada")
+                return True
+            else:
+                print(f"❌ Erro: {response.status_code} - {response.text[:100]}")
+                return False
+        except Exception as e:
+            print(f"❌ Erro ao enviar mensagem com botões: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
+    def responder_callback(self, callback_query_id, texto_notificacao, alert=False):
+        """Responde a um clique de botão (callback_query)"""
+        try:
+            url = f"https://api.telegram.org/bot{self.token}/answerCallbackQuery"
+            payload = {
+                'callback_query_id': callback_query_id,
+                'text': texto_notificacao,
+                'show_alert': alert
+            }
+            response = requests.post(url, json=payload, timeout=10)
+            if response.status_code == 200:
+                print(f"✅ Callback respondido")
+                return True
+            else:
+                print(f"❌ Erro ao responder callback: {response.status_code}")
+                return False
+        except Exception as e:
+            print(f"❌ Erro ao responder callback: {e}")
+            return False
     def _limpar_updates_processados(self):
         """Remove updates já processados da fila do Telegram"""
         try:
@@ -175,7 +232,11 @@ class TelegramListener:
             return self.mostrar_status()
         
         elif texto in ['/registrar', 'registrar', '🕒 registrar ponto']:
-            return self.executar_registro()
+            # Pede confirmação via botão inline
+            agora = datetime.now()
+            mensagem = f"⚠️ <b>Registrar ponto agora às {agora.strftime('%H:%M:%S')}?</b>"
+            self.enviar_mensagem_com_botoes(mensagem)
+            return None  # Não retorna resposta via texto, usa botões
         
         elif texto in ['/horas', 'horas', '⏰ horas trabalhadas']:
             return self.mostrar_horas()
@@ -592,7 +653,7 @@ on:
             "❓ /ajuda - Ajuda completa"
         )
     
-    def executar_registro(self):
+    def executar_registro(self, confirmado=False):
         """Executa o registro de ponto"""
         try:
             from main import SistemaPonto
@@ -629,6 +690,15 @@ on:
                 
         except Exception as e:
             return f"❌ Erro ao registrar: {str(e)}"
+    
+    def processar_callback(self, callback_data):
+        """Processa clique em botão (callback_query)"""
+        if callback_data == 'confirmar_registrar':
+            return self.executar_registro(confirmado=True)
+        elif callback_data == 'cancelar_registrar':
+            return "❌ Registro cancelado."
+        else:
+            return f"❌ Ação desconhecida: {callback_data}"
     
     def _deduplica_comandos(self, updates):
         """
@@ -676,6 +746,7 @@ on:
         
         for update in comandos_processados:
             message = update.get('message', {})
+            callback_query = update.get('callback_query', {})
             msg_chat_id = str(message.get('chat', {}).get('id', ''))
             texto = message.get('text', '')
             
@@ -732,8 +803,32 @@ on:
                 
                 for update in comandos_processados:
                     message = update.get('message', {})
+                    callback_query = update.get('callback_query', {})
                     msg_chat_id = str(message.get('chat', {}).get('id', ''))
                     texto = message.get('text', '')
+                    
+                    # Processa callback_query (clique em botão)
+                    if callback_query:
+                        callback_id = callback_query.get('id')
+                        callback_data = callback_query.get('data', '')
+                        user_id = str(callback_query.get('from', {}).get('id', ''))
+                        
+                        print(f"🔘 Clique em botão: {callback_data} (usuário {user_id})")
+                        
+                        # Processa a ação do botão
+                        resposta = self.processar_callback(callback_data)
+                        
+                        # Responde ao callback (remove loading do botão)
+                        self.responder_callback(callback_id, f"✅ {callback_data}")
+                        
+                        # Envia resposta como mensagem
+                        if resposta:
+                            enviado = self.enviar_mensagem(resposta)
+                            if enviado:
+                                ultimo_comando = time.time()
+                                print(f"✅ Resposta enviada")
+                        
+                        continue
                     
                     if msg_chat_id != self.chat_id:
                         continue
