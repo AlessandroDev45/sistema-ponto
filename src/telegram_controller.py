@@ -340,8 +340,10 @@ class TelegramController:
 
     def _executar_registro_ponto(self, tipo_registro):
         """Executa o registro de ponto e mostra resumo"""
+        # ⛔ DESABILITADO - Usar scripts/telegram_listener.py em vez disso
         try:
-            resultado = self.automacao.registrar_ponto(force=True)
+            self.enviar_mensagem("⚠️ Use /registrar no listener para registrar ponto")
+            return
             
             if resultado['sucesso']:
                 agora = datetime.now()
@@ -430,9 +432,10 @@ class TelegramController:
 
             hora_atual = agora.strftime('%H:%M')
             msg += "\n<b>Próximos Horários:</b>\n"
-            if hora_atual < config.HORARIO_ENTRADA:
+            # Ambos são strings em HH:MM, comparação é válida
+            if hora_atual < config.HORARIO_ENTRADA:  # type: ignore
                 msg += f"• Próximo registro: {config.HORARIO_ENTRADA} (Entrada)\n"
-            elif hora_atual < config.HORARIO_SAIDA:
+            elif hora_atual < config.HORARIO_SAIDA:  # type: ignore
                 msg += f"• Próximo registro: {config.HORARIO_SAIDA} (Saída)\n"
             else:
                 msg += f"• Próximo registro: {config.HORARIO_ENTRADA} (Entrada amanhã)\n"
@@ -695,17 +698,9 @@ class TelegramController:
         return False
     def processar_comando_status(self):
         """Processa o comando de status"""
+        # ⛔ DESABILITADO - Usar scripts/telegram_listener.py em vez disso
         try:
-            if not hasattr(self, 'automacao'):
-                self.enviar_mensagem("❌ Sistema não inicializado corretamente")
-                return
-
-            status = self.automacao.verificar_status()
-            if status and 'mensagem' in status:
-                self.enviar_mensagem(status['mensagem'])
-            else:
-                self.enviar_mensagem("❌ Não foi possível obter o status do sistema")
-                
+            self.enviar_mensagem("📊 Use /status no listener para status em tempo real")
         except Exception as e:
             self.logger.error(f"Erro ao processar comando de status: {e}")
-            self.enviar_mensagem("❌ Erro ao obter status do sistema")
+            self.enviar_mensagem("❌ Erro ao obter status")
